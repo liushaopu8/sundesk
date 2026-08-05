@@ -1,4 +1,4 @@
-name: Android Arm64 Build
+name: Build Android Arm64 APK
 
 on:
   workflow_dispatch:
