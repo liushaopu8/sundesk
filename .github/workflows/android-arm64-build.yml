@@ -23,6 +23,9 @@ env:
   UPLOAD_ARTIFACT: "true"
   ANDROID_SIGNING_KEY: "${{ secrets.ANDROID_SIGNING_KEY }}"
 
+permissions:
+  contents: write
+
 jobs:
   generate-bridge:
     runs-on: ubuntu-22.04
