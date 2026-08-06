@@ -17,6 +17,7 @@ import android.content.ClipboardManager
 import android.os.Bundle
 import android.os.Build
 import android.os.IBinder
+import android.provider.Settings
 import android.util.Log
 import android.view.WindowManager
 import android.media.MediaCodecInfo
@@ -285,13 +286,13 @@ class MainActivity : FlutterActivity() {
                     onVoiceCallClosed()
 }
                 "get_device_sn" -> {
-                    // »ñÈ¡Éè±¸ SN ºÅ£ºÓÅÏÈ·´Éä SystemProperties£¨ÃâÈ¨ÏÞ£©£¬ÔÙ fallback
+                    // ï¿½ï¿½È¡ï¿½è±¸ SN ï¿½Å£ï¿½ï¿½ï¿½ï¿½È·ï¿½ï¿½ï¿½ SystemPropertiesï¿½ï¿½ï¿½ï¿½È¨ï¿½Þ£ï¿½ï¿½ï¿½ï¿½ï¿½ fallback
                     var sn = ""
                     try {
-                        // Í¨¹ý·´Éä¶ÁÈ¡ ro.serialno£¨²»ÐèÒª READ_PHONE_STATE È¨ÏÞ£©
+                        // Í¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¡ ro.serialnoï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òª READ_PHONE_STATE È¨ï¿½Þ£ï¿½
                         val clazz = Class.forName("android.os.SystemProperties")
                         val get = clazz.getMethod("get", String::class.java, String::class.java)
-                        // ÏÈÊÔ ro.serialno£¬ÔÙÊÔ ro.boot.serialno
+                        // ï¿½ï¿½ï¿½ï¿½ ro.serialnoï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ro.boot.serialno
                         sn = (get.invoke(null, "ro.serialno", "") as String).trim()
                         if (sn.isEmpty()) {
                             sn = (get.invoke(null, "ro.boot.serialno", "") as String).trim()
@@ -300,7 +301,7 @@ class MainActivity : FlutterActivity() {
                     } catch (e: Exception) {
                         Log.w(logTag, "SystemProperties reflection failed: ${e.message}")
                     }
-                    // ·´ÉäÊ§°ÜÔò³¢ÊÔ Build.getSerial()
+                    // ï¿½ï¿½ï¿½ï¿½Ê§ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Build.getSerial()
                     if (sn.isEmpty()) {
                         try {
                             sn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -313,7 +314,7 @@ class MainActivity : FlutterActivity() {
                             Log.w(logTag, "Build.getSerial failed: ${e.message}")
                         }
                     }
-                    // ¶¼Ê§°ÜÔò»ØÍËµ½ ANDROID_ID
+                    // ï¿½ï¿½Ê§ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ëµï¿½ ANDROID_ID
                     if (sn.isEmpty() || sn == Build.UNKNOWN || sn == "unknown") {
                         sn = Settings.Secure.getString(
                             contentResolver,
