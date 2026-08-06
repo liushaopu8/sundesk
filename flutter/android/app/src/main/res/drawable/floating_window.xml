@@ -17,47 +17,45 @@
         android:fillColor="#00000000"
         android:pathData="M160,160 m-140,0 a140,140 0,1 1,280 0 a140,140 0,1 1,-280 0" />
 
-    <!-- Computer monitor screen (outline) -->
+    <!-- Computer monitor (outline, upper-left area) -->
     <path
         android:strokeColor="#333333"
         android:strokeWidth="9"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
         android:fillColor="#00000000"
-        android:pathData="M100,95 L210,95 L210,195 L100,195 Z" />
+        android:pathData="M80,90 L195,90 L195,190 L80,190 Z" />
 
     <!-- Monitor stand -->
     <path
         android:strokeColor="#333333"
         android:strokeWidth="9"
         android:strokeLineCap="round"
-        android:strokeLineJoin="round"
         android:fillColor="#00000000"
-        android:pathData="M155,195 L155,220" />
+        android:pathData="M137,190 L137,215" />
 
     <!-- Monitor base -->
     <path
         android:strokeColor="#333333"
         android:strokeWidth="9"
         android:strokeLineCap="round"
-        android:strokeLineJoin="round"
         android:fillColor="#00000000"
-        android:pathData="M130,220 L180,220" />
+        android:pathData="M112,215 L162,215" />
 
-    <!-- Phone body (outline) -->
+    <!-- Phone body (outline, lower-right, overlapping computer) -->
     <path
         android:strokeColor="#333333"
         android:strokeWidth="9"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
         android:fillColor="#00000000"
-        android:pathData="M200,130 L245,130 L245,225 L200,225 Z" />
+        android:pathData="M170,115 L220,115 L220,220 L170,220 Z" />
 
     <!-- Phone camera dot -->
     <path
-        android:strokeColor="#333333"
-        android:strokeWidth="6"
+        android:strokeColor="#00000000"
+        android:strokeWidth="0"
         android:fillColor="#333333"
-        android:pathData="M222,200 m-4,0 a4,4 0,1 1,8 0 a4,4 0,1 1,-8 0" />
+        android:pathData="M195,195 m-4,0 a4,4 0,1 1,8 0 a4,4 0,1 1,-8 0" />
 
 </vector>
