@@ -5,6 +5,11 @@
     android:viewportWidth="320"
     android:viewportHeight="320">
 
+    <!-- White square background -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M0,0 L320,0 L320,320 L0,320 Z" />
+
     <!-- Blue circle outline -->
     <path
         android:strokeColor="#2196F3"
