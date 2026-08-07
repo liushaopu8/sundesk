@@ -113,7 +113,7 @@ void checkService() async {
 }
 
 class SunDeskStatusCard extends StatelessWidget {
-  SunDeskStatusCard({Key? key}) : super(key: key);
+  const SunDeskStatusCard({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
