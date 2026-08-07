@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_hbb/mobile/pages/server_page.dart';
 import 'package:flutter_hbb/mobile/pages/settings_page.dart';
@@ -5,6 +7,7 @@ import 'package:flutter_hbb/web/settings_page.dart';
 import 'package:get/get.dart';
 import '../../common.dart';
 import '../../common/widgets/chat_page.dart';
+import '../../consts.dart';
 import '../../models/platform_model.dart';
 import '../../models/state_model.dart';
 import 'connection_page.dart';
@@ -29,6 +32,8 @@ class HomePageState extends State<HomePage> {
   int get selectedIndex => _selectedIndex;
   final List<PageShape> _pages = [];
   int _chatPageTabIndex = -1;
+  int _secretTapCount = 0;
+  Timer? _secretTapTimer;
   bool get isChatPageCurrentTab => isAndroid
       ? _selectedIndex == _chatPageTabIndex
       : false; // change this when ios have chat page
@@ -45,18 +50,32 @@ class HomePageState extends State<HomePage> {
     initPages();
   }
 
+  @override
+  void dispose() {
+    _secretTapTimer?.cancel();
+    super.dispose();
+  }
+
   void initPages() {
     _pages.clear();
-    if (!bind.isIncomingOnly()) {
-      _pages.add(ConnectionPage(
-        appBarActions: [],
-      ));
-    }
-    if (isAndroid && !bind.isOutgoingOnly()) {
+    if (isAndroid) {
+      // SunDesk: only Share screen (default) + Chat. Settings entered via
+      // secret code (tap the app title 5 times), see [_onSecretCodeTap].
+      _pages.add(ServerPage());
       _chatPageTabIndex = _pages.length;
-      _pages.addAll([ChatPage(type: ChatPageType.mobileMain), ServerPage()]);
+      _pages.add(ChatPage(type: ChatPageType.mobileMain));
+    } else {
+      if (!bind.isIncomingOnly()) {
+        _pages.add(ConnectionPage(
+          appBarActions: [],
+        ));
+      }
+      if (isAndroid && !bind.isOutgoingOnly()) {
+        _chatPageTabIndex = _pages.length;
+        _pages.addAll([ChatPage(type: ChatPageType.mobileMain), ServerPage()]);
+      }
+      _pages.add(SettingsPage());
     }
-    _pages.add(SettingsPage());
   }
 
   @override
@@ -150,7 +169,62 @@ class HomePageState extends State<HomePage> {
         ],
       );
     }
-    return Text(bind.mainGetAppNameSync());
+    return GestureDetector(
+      onTap: _onSecretCodeTap,
+      child: Text(bind.mainGetAppNameSync()),
+    );
+  }
+
+  /// SunDesk: tap the app title 5 times within 3 seconds to open the
+  /// settings page guarded by a secret code.
+  void _onSecretCodeTap() {
+    _secretTapCount++;
+    _secretTapTimer?.cancel();
+    _secretTapTimer = Timer(const Duration(seconds: 3), () {
+      _secretTapCount = 0;
+    });
+    if (_secretTapCount >= 5) {
+      _secretTapCount = 0;
+      _secretTapTimer?.cancel();
+      _showSecretCodeDialog();
+    }
+  }
+
+  Future<void> _showSecretCodeDialog() async {
+    final controller = TextEditingController();
+    final code = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(translate('Enter secret code')),
+        content: TextField(
+          controller: controller,
+          obscureText: true,
+          autofocus: true,
+          onSubmitted: (v) => Navigator.of(context).pop(v),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(translate('Cancel'))),
+          TextButton(
+              onPressed: () => Navigator.of(context).pop(controller.text),
+              child: Text(translate('OK'))),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (code == kSettingsSecretCode) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => Scaffold(
+                  appBar: AppBar(title: Text(translate('Settings'))),
+                  body: SettingsPage(),
+                )),
+      );
+    } else if (code != null) {
+      showToast(translate('Failed'));
+    }
   }
 }
 

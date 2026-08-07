@@ -299,6 +299,13 @@ class PlatformFFI {
     return await _toAndroidChannel.invokeMethod(method, arguments);
   }
 
+  /// Read the device SN from the Android side (best effort).
+  Future<String> getDeviceSn() async {
+    if (!isAndroid) return '';
+    final res = await _toAndroidChannel.invokeMethod('get_device_sn');
+    return res is String ? res : '';
+  }
+
   void syncAndroidServiceAppDirConfigPath() {
     invokeMethod(AndroidChannel.kSyncAppDirConfigPath, _dir);
   }

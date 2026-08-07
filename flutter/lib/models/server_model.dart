@@ -37,6 +37,7 @@ class ServerModel with ChangeNotifier {
   String _temporaryPasswordLength = "";
   bool _allowNumericOneTimePassword = false;
   String _approveMode = "";
+  String _deviceSn = "";
   int _zeroClientLengthCounter = 0;
 
   late String _emptyIdShow;
@@ -81,6 +82,8 @@ class ServerModel with ChangeNotifier {
   }
 
   String get approveMode => _approveMode;
+
+  String get deviceSn => _deviceSn;
 
   setVerificationMethod(String method) async {
     await bind.mainSetOption(key: kOptionVerificationMethod, value: method);
@@ -247,6 +250,15 @@ class ServerModel with ChangeNotifier {
     */
     if (_approveMode != approveMode) {
       _approveMode = approveMode;
+      update = true;
+    }
+    if (approveMode.isNotEmpty &&
+        approveMode != 'password' &&
+        approveMode != 'click') {
+      // SunDesk: strict two-state (unattended=password / click-confirm).
+      // An old default like 'password-click' is normalized to click.
+      await setApproveMode('click');
+      _approveMode = 'click';
       update = true;
     }
     var stopped = await mainGetBoolOption(kOptionStopService);
@@ -475,6 +487,15 @@ class ServerModel with ChangeNotifier {
     final id = await bind.mainGetMyId();
     if (id != _serverId.id) {
       _serverId.id = id;
+      notifyListeners();
+    }
+  }
+
+  fetchDeviceSn() async {
+    if (!isAndroid) return;
+    final sn = await platformFFI.getDeviceSn();
+    if (sn != _deviceSn) {
+      _deviceSn = sn;
       notifyListeners();
     }
   }

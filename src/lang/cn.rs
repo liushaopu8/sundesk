@@ -775,5 +775,10 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("whitelist_cidr_tip", "支持 CIDR 写法，例如 192.168.1.0/24"),
         ("Continue", "继续"),
         ("Browser didn't open? Use the url below to sign in.", ""),
+        ("The connection is ready!", "连接已就绪！"),
+        ("Unattended", "无人值守"),
+        ("SN", "SN"),
+        ("Enter secret code", "请输入暗码"),
+        ("Secret code", "暗码"),
     ].iter().cloned().collect();
 }

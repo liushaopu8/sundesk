@@ -454,6 +454,18 @@ class AndroidChannel {
   static final kSyncAppDirConfigPath = "sync_app_dir";
 }
 
+/// SunDesk: 无人值守固定密码（安卓端与 web 端协议，用户不可自定义）。
+const String kUnattendedFixedPassword = 'SunDesk@2026';
+
+/// SunDesk: 进入设置页的暗码。
+const String kSettingsSecretCode = 'sundesk#9527';
+
+/// SunDesk: TMS 下发的中继/ID 服务器配置文件路径（应用内不可修改）。
+const String kTmsConfigPath = '/storage/emulated/0/SunDesk/sundesk_config.json';
+
+/// SunDesk: 标记 TMS 配置已应用的本地 option。
+const String kOptionTmsConfigApplied = 'tms-config-applied';
+
 /// flutter/packages/flutter/lib/src/services/keyboard_key.dart -> _keyLabels
 /// see [LogicalKeyboardKey.keyLabel]
 const Map<int, String> logicalKeyMap = <int, String>{

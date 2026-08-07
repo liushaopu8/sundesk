@@ -2,14 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_hbb/desktop/pages/desktop_home_page.dart';
-import 'package:flutter_hbb/mobile/widgets/dialog.dart';
 import 'package:flutter_hbb/models/chat_model.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
 import '../../common.dart';
-import '../../common/widgets/dialog.dart';
 import '../../consts.dart';
 import '../../models/platform_model.dart';
 import '../../models/server_model.dart';
@@ -23,10 +20,7 @@ class ServerPage extends StatefulWidget implements PageShape {
   final icon = const Icon(Icons.mobile_screen_share);
 
   @override
-  final appBarActions = (!bind.isDisableSettings() &&
-          bind.mainGetBuildinOption(key: kOptionHideSecuritySetting) != 'Y')
-      ? [_DropDownAction()]
-      : [];
+  final appBarActions = [_DropDownAction()];
 
   ServerPage({Key? key}) : super(key: key);
 
@@ -43,132 +37,18 @@ class _DropDownAction extends StatelessWidget {
         tooltip: "",
         icon: const Icon(Icons.more_vert),
         itemBuilder: (context) {
-          listTile(String text, bool checked) {
-            return ListTile(
-                title: Text(translate(text)),
-                trailing: Icon(
-                  Icons.check,
-                  color: checked ? null : Colors.transparent,
-                ));
-          }
-
-          final approveMode = gFFI.serverModel.approveMode;
-          final verificationMethod = gFFI.serverModel.verificationMethod;
-          final showPasswordOption = approveMode != 'click';
-          final isApproveModeFixed = isOptionFixed(kOptionApproveMode);
-          final isNumericOneTimePasswordFixed =
-              isOptionFixed(kOptionAllowNumericOneTimePassword);
-          final isAllowNumericOneTimePassword =
-              gFFI.serverModel.allowNumericOneTimePassword;
+          final isStart = gFFI.serverModel.isStart;
           return [
-            if (!isChangeIdDisabled())
-              PopupMenuItem(
-                enabled: gFFI.serverModel.connectStatus > 0,
-                value: "changeID",
-                child: Text(translate("Change ID")),
-              ),
-            if (!isChangeIdDisabled()) const PopupMenuDivider(),
             PopupMenuItem(
-              value: 'AcceptSessionsViaPassword',
-              child: listTile(
-                  'Accept sessions via password', approveMode == 'password'),
-              enabled: !isApproveModeFixed,
+              value: "toggleService",
+              child: Text(
+                  translate(isStart ? "Stop service" : "Start service")),
             ),
-            PopupMenuItem(
-              value: 'AcceptSessionsViaClick',
-              child:
-                  listTile('Accept sessions via click', approveMode == 'click'),
-              enabled: !isApproveModeFixed,
-            ),
-            PopupMenuItem(
-              value: "AcceptSessionsViaBoth",
-              child: listTile("Accept sessions via both",
-                  approveMode != 'password' && approveMode != 'click'),
-              enabled: !isApproveModeFixed,
-            ),
-            if (showPasswordOption) const PopupMenuDivider(),
-            if (showPasswordOption &&
-                verificationMethod != kUseTemporaryPassword &&
-                !isChangePermanentPasswordDisabled())
-              PopupMenuItem(
-                value: "setPermanentPassword",
-                child: Text(translate("Set permanent password")),
-              ),
-            if (showPasswordOption &&
-                verificationMethod != kUsePermanentPassword)
-              PopupMenuItem(
-                value: "setTemporaryPasswordLength",
-                child: Text(translate("One-time password length")),
-              ),
-            if (showPasswordOption &&
-                verificationMethod != kUsePermanentPassword)
-              PopupMenuItem(
-                value: "allowNumericOneTimePassword",
-                child: listTile(translate("Numeric one-time password"),
-                    isAllowNumericOneTimePassword),
-                enabled: !isNumericOneTimePasswordFixed,
-              ),
-            if (showPasswordOption) const PopupMenuDivider(),
-            if (showPasswordOption)
-              PopupMenuItem(
-                value: kUseTemporaryPassword,
-                child: listTile('Use one-time password',
-                    verificationMethod == kUseTemporaryPassword),
-              ),
-            if (showPasswordOption)
-              PopupMenuItem(
-                value: kUsePermanentPassword,
-                child: listTile('Use permanent password',
-                    verificationMethod == kUsePermanentPassword),
-              ),
-            if (showPasswordOption)
-              PopupMenuItem(
-                value: kUseBothPasswords,
-                child: listTile(
-                    'Use both passwords',
-                    verificationMethod != kUseTemporaryPassword &&
-                        verificationMethod != kUsePermanentPassword),
-              ),
           ];
         },
         onSelected: (value) async {
-          if (value == "changeID") {
-            changeIdDialog();
-          } else if (value == "setPermanentPassword") {
-            setPasswordDialog();
-          } else if (value == "setTemporaryPasswordLength") {
-            setTemporaryPasswordLengthDialog(gFFI.dialogManager);
-          } else if (value == "allowNumericOneTimePassword") {
-            gFFI.serverModel.switchAllowNumericOneTimePassword();
-            gFFI.serverModel.updatePasswordModel();
-          } else if (value == kUsePermanentPassword ||
-              value == kUseTemporaryPassword ||
-              value == kUseBothPasswords) {
-            callback() {
-              bind.mainSetOption(key: kOptionVerificationMethod, value: value);
-              gFFI.serverModel.updatePasswordModel();
-            }
-
-            if (value == kUsePermanentPassword &&
-                (await bind.mainGetCommon(key: "permanent-password-set")) !=
-                    "true") {
-              if (isChangePermanentPasswordDisabled()) {
-                callback();
-                return;
-              }
-              setPasswordDialog(notEmptyCallback: callback);
-            } else {
-              callback();
-            }
-          } else if (value.startsWith("AcceptSessionsVia")) {
-            value = value.substring("AcceptSessionsVia".length);
-            if (value == "Password") {
-              gFFI.serverModel.setApproveMode('password');
-            } else if (value == "Click") {
-              gFFI.serverModel.setApproveMode('click');
-            } else {
-              gFFI.serverModel.setApproveMode(defaultOptionApproveMode);
-            }
+          if (value == "toggleService") {
+            gFFI.serverModel.toggleService();
           }
         })
   ];
@@ -187,6 +67,7 @@ class _ServerPageState extends State<ServerPage> {
     super.initState();
     _updateTimer = periodic_immediate(const Duration(seconds: 3), () async {
       await gFFI.serverModel.fetchID();
+      await gFFI.serverModel.fetchDeviceSn();
     });
     gFFI.serverModel.checkAndroidPermission();
   }
@@ -210,9 +91,7 @@ class _ServerPageState extends State<ServerPage> {
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         buildPresetPasswordWarningMobile(),
-                        gFFI.serverModel.isStart
-                            ? ServerInfo()
-                            : ServiceNotRunningNotification(),
+                        const SunDeskStatusCard(),
                         const ConnectionManager(),
                         const PermissionChecker(),
                         SizedBox.fromSize(size: const Size(0, 15.0)),
@@ -233,38 +112,160 @@ void checkService() async {
   }
 }
 
-class ServiceNotRunningNotification extends StatelessWidget {
-  ServiceNotRunningNotification({Key? key}) : super(key: key);
+class SunDeskStatusCard extends StatelessWidget {
+  SunDeskStatusCard({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final serverModel = Provider.of<ServerModel>(context);
+    const double iconMarginRight = 15;
+    const double iconSize = 24;
+    const TextStyle textStyleHeading = TextStyle(
+        fontSize: 16.0, fontWeight: FontWeight.bold, color: Colors.grey);
+    const TextStyle textStyleValue =
+        TextStyle(fontSize: 20, fontWeight: FontWeight.bold);
 
+    void copyToClipboard(String value) {
+      Clipboard.setData(ClipboardData(text: value));
+      showToast(translate('Copied'));
+    }
+
+    Widget statusRow() {
+      if (!serverModel.isStart || serverModel.connectStatus == -1) {
+        return Row(children: [
+          const Icon(Icons.cancel, color: Colors.red, size: iconSize)
+              .marginOnly(right: iconMarginRight),
+          Expanded(child: Text(translate('not_ready_status')))
+        ]);
+      } else if (serverModel.connectStatus == 0) {
+        return Row(children: [
+          SizedBox(width: 20, height: 20, child: CircularProgressIndicator())
+              .marginOnly(left: 4, right: iconMarginRight),
+          Expanded(child: Text(translate('connecting_status')))
+        ]);
+      } else {
+        return Row(children: [
+          const Icon(Icons.check_circle, color: Colors.green, size: iconSize)
+              .marginOnly(right: iconMarginRight),
+          Expanded(child: Text(translate('The connection is ready!')))
+        ]);
+      }
+    }
+
+    final unattended = serverModel.approveMode == 'password';
     return PaddingCard(
-        title: translate("Service is not running"),
-        titleIcon:
-            const Icon(Icons.warning_amber_sharp, color: Colors.redAccent),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(translate("android_start_service_tip"),
-                    style:
-                        const TextStyle(fontSize: 12, color: MyTheme.darkGray))
-                .marginOnly(bottom: 8),
-            ElevatedButton.icon(
-                icon: const Icon(Icons.play_arrow),
+        title: translate('Your Device'),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // ID
+          Row(children: [
+            const Icon(Icons.perm_identity,
+                    color: Colors.grey, size: iconSize)
+                .marginOnly(right: iconMarginRight),
+            Text(
+              translate('ID'),
+              style: textStyleHeading,
+            )
+          ]),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Text(
+              serverModel.serverId.value.text,
+              style: textStyleValue,
+            ),
+            IconButton(
+                visualDensity: VisualDensity.compact,
+                icon: Icon(Icons.copy_outlined),
                 onPressed: () {
-                  if (gFFI.userModel.userName.value.isEmpty &&
-                      bind.mainGetLocalOption(key: "show-scam-warning") !=
-                          "N") {
-                    showScamWarning(context, serverModel);
-                  } else {
-                    serverModel.toggleService();
+                  copyToClipboard(serverModel.serverId.value.text.trim());
+                })
+          ]).marginOnly(left: 39, bottom: 10),
+          // SN
+          Row(children: [
+            const Icon(Icons.confirmation_number,
+                    color: Colors.grey, size: iconSize)
+                .marginOnly(right: iconMarginRight),
+            Text(
+              translate('SN'),
+              style: textStyleHeading,
+            )
+          ]),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Text(
+              serverModel.deviceSn.isEmpty ? '-' : serverModel.deviceSn,
+              style: textStyleValue,
+            ),
+            IconButton(
+                visualDensity: VisualDensity.compact,
+                icon: Icon(Icons.copy_outlined),
+                onPressed: () {
+                  copyToClipboard(serverModel.deviceSn.trim());
+                })
+          ]).marginOnly(left: 39, bottom: 10),
+          // Unattended
+          SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Row(children: [
+                const Icon(Icons.lock_outline,
+                        color: Colors.grey, size: iconSize)
+                    .marginOnly(right: iconMarginRight),
+                Text(
+                  translate('Unattended'),
+                  style: textStyleHeading,
+                )
+              ]),
+              value: unattended,
+              onChanged: (value) async {
+                if (value) {
+                  final ok = await bind.mainSetPermanentPasswordWithResult(
+                      password: kUnattendedFixedPassword);
+                  if (!ok) {
+                    showToast(translate('Failed'));
+                    return;
                   }
-                },
-                label: Text(translate("Start service")))
-          ],
-        ));
+                  serverModel.setApproveMode('password');
+                } else {
+                  serverModel.setApproveMode('click');
+                }
+              }),
+          if (unattended)
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Row(children: [
+                const Icon(Icons.password, color: Colors.grey, size: iconSize)
+                    .marginOnly(right: iconMarginRight),
+                Text(
+                  translate('Password'),
+                  style: textStyleHeading,
+                )
+              ]),
+              Row(children: [
+                Text(
+                  kUnattendedFixedPassword,
+                  style: textStyleValue,
+                ),
+                IconButton(
+                    visualDensity: VisualDensity.compact,
+                    icon: Icon(Icons.copy_outlined),
+                    onPressed: () {
+                      copyToClipboard(kUnattendedFixedPassword);
+                    })
+              ]),
+            ]).marginOnly(left: 0, bottom: 10),
+          statusRow(),
+          if (!serverModel.isStart)
+            Center(
+              child: ElevatedButton.icon(
+                  icon: const Icon(Icons.play_arrow),
+                  onPressed: () {
+                    if (gFFI.userModel.userName.value.isEmpty &&
+                        bind.mainGetLocalOption(key: "show-scam-warning") !=
+                            "N") {
+                      showScamWarning(context, serverModel);
+                    } else {
+                      serverModel.toggleService();
+                    }
+                  },
+                  label: Text(translate("Start service"))).marginOnly(top: 15),
+            ),
+        ]));
   }
 }
 
@@ -460,117 +461,6 @@ class ScamWarningDialogState extends State<ScamWarningDialog> {
   }
 }
 
-class ServerInfo extends StatelessWidget {
-  final model = gFFI.serverModel;
-  final emptyController = TextEditingController(text: "-");
-
-  ServerInfo({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    final serverModel = Provider.of<ServerModel>(context);
-
-    const Color colorPositive = Colors.green;
-    const Color colorNegative = Colors.red;
-    const double iconMarginRight = 15;
-    const double iconSize = 24;
-    const TextStyle textStyleHeading = TextStyle(
-        fontSize: 16.0, fontWeight: FontWeight.bold, color: Colors.grey);
-    const TextStyle textStyleValue =
-        TextStyle(fontSize: 25.0, fontWeight: FontWeight.bold);
-
-    void copyToClipboard(String value) {
-      Clipboard.setData(ClipboardData(text: value));
-      showToast(translate('Copied'));
-    }
-
-    Widget ConnectionStateNotification() {
-      if (serverModel.connectStatus == -1) {
-        return Row(children: [
-          const Icon(Icons.warning_amber_sharp,
-                  color: colorNegative, size: iconSize)
-              .marginOnly(right: iconMarginRight),
-          Expanded(child: Text(translate('not_ready_status')))
-        ]);
-      } else if (serverModel.connectStatus == 0) {
-        return Row(children: [
-          SizedBox(width: 20, height: 20, child: CircularProgressIndicator())
-              .marginOnly(left: 4, right: iconMarginRight),
-          Expanded(child: Text(translate('connecting_status')))
-        ]);
-      } else {
-        return Row(children: [
-          const Icon(Icons.check, color: colorPositive, size: iconSize)
-              .marginOnly(right: iconMarginRight),
-          Expanded(child: Text(translate('Ready')))
-        ]);
-      }
-    }
-
-    final showOneTime = serverModel.approveMode != 'click' &&
-        serverModel.verificationMethod != kUsePermanentPassword;
-    return PaddingCard(
-        title: translate('Your Device'),
-        child: Column(
-          // ID
-          children: [
-            Row(children: [
-              const Icon(Icons.perm_identity,
-                      color: Colors.grey, size: iconSize)
-                  .marginOnly(right: iconMarginRight),
-              Text(
-                translate('ID'),
-                style: textStyleHeading,
-              )
-            ]),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Text(
-                model.serverId.value.text,
-                style: textStyleValue,
-              ),
-              IconButton(
-                  visualDensity: VisualDensity.compact,
-                  icon: Icon(Icons.copy_outlined),
-                  onPressed: () {
-                    copyToClipboard(model.serverId.value.text.trim());
-                  })
-            ]).marginOnly(left: 39, bottom: 10),
-            // Password
-            Row(children: [
-              const Icon(Icons.lock_outline, color: Colors.grey, size: iconSize)
-                  .marginOnly(right: iconMarginRight),
-              Text(
-                translate('One-time Password'),
-                style: textStyleHeading,
-              )
-            ]),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Text(
-                !showOneTime ? '-' : model.serverPasswd.value.text,
-                style: textStyleValue,
-              ),
-              !showOneTime
-                  ? SizedBox.shrink()
-                  : Row(children: [
-                      IconButton(
-                          visualDensity: VisualDensity.compact,
-                          icon: const Icon(Icons.refresh),
-                          onPressed: () => bind.mainUpdateTemporaryPassword()),
-                      IconButton(
-                          visualDensity: VisualDensity.compact,
-                          icon: Icon(Icons.copy_outlined),
-                          onPressed: () {
-                            copyToClipboard(
-                                model.serverPasswd.value.text.trim());
-                          })
-                    ])
-            ]).marginOnly(left: 40, bottom: 15),
-            ConnectionStateNotification()
-          ],
-        ));
-  }
-}
-
 class PermissionChecker extends StatefulWidget {
   const PermissionChecker({Key? key}) : super(key: key);
 
@@ -596,16 +486,6 @@ class _PermissionCheckerState extends State<PermissionChecker> {
     return PaddingCard(
         title: translate("Permissions"),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          serverModel.mediaOk && !hideStopService
-              ? ElevatedButton.icon(
-                      style: ButtonStyle(
-                          backgroundColor:
-                              MaterialStateProperty.all(Colors.red)),
-                      icon: const Icon(Icons.stop),
-                      onPressed: serverModel.toggleService,
-                      label: Text(translate("Stop service")))
-                  .marginOnly(bottom: 8)
-              : SizedBox.shrink(),
           if (!hideStopService || !serverModel.mediaOk)
             PermissionRow(
                 translate("Screen Capture"),
