@@ -286,43 +286,9 @@ class MainActivity : FlutterActivity() {
                     onVoiceCallClosed()
 }
                 "get_device_sn" -> {
-                    // ��ȡ�豸 SN �ţ����ȷ��� SystemProperties����Ȩ�ޣ����� fallback
-                    var sn = ""
-                    try {
-                        // ͨ�������ȡ ro.serialno������Ҫ READ_PHONE_STATE Ȩ�ޣ�
-                        val clazz = Class.forName("android.os.SystemProperties")
-                        val get = clazz.getMethod("get", String::class.java, String::class.java)
-                        // ���� ro.serialno������ ro.boot.serialno
-                        sn = (get.invoke(null, "ro.serialno", "") as String).trim()
-                        if (sn.isEmpty()) {
-                            sn = (get.invoke(null, "ro.boot.serialno", "") as String).trim()
-                        }
-                        Log.i(logTag, "SystemProperties serialno: $sn")
-                    } catch (e: Exception) {
-                        Log.w(logTag, "SystemProperties reflection failed: ${e.message}")
-                    }
-                    // ����ʧ������ Build.getSerial()
-                    if (sn.isEmpty()) {
-                        try {
-                            sn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                Build.getSerial()
-                            } else {
-                                @Suppress("DEPRECATION")
-                                Build.SERIAL
-                            }
-                        } catch (e: Exception) {
-                            Log.w(logTag, "Build.getSerial failed: ${e.message}")
-                        }
-                    }
-                    // ��ʧ������˵� ANDROID_ID
-                    if (sn.isEmpty() || sn == Build.UNKNOWN || sn == "unknown") {
-                        sn = Settings.Secure.getString(
-                            contentResolver,
-                            Settings.Secure.ANDROID_ID
-                        ) ?: "unknown"
-                    }
+                    val sn = getDeviceSn(this)
                     Log.i(logTag, "Device SN result: $sn")
-                    result.success(sn)                
+                    result.success(sn)
                 }
                 else -> {
                     result.error("-1", "No such method", null)

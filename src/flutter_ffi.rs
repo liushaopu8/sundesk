@@ -3081,6 +3081,7 @@ pub mod server_side {
         _class: JClass,
         app_dir: JString,
         custom_client_config: JString,
+        sn: JString,
     ) {
         log::debug!("startServer from jvm");
         let mut env = env;
@@ -3091,6 +3092,20 @@ pub mod server_side {
             if !custom_client_config.is_empty() {
                 let custom_client_config: String = custom_client_config.into();
                 crate::read_custom_client(&custom_client_config);
+            }
+        }
+        // SunDesk: seed the device ID from the hardware SN so devices are
+        // reachable by SN instead of a random ID. Runs before start_server
+        // below, so the SN is what gets registered with the rendezvous server.
+        if let Ok(sn) = env.get_string(&sn) {
+            let sn: String = sn.into();
+            if !sn.is_empty() && crate::common::is_valid_untrusted_peer_id(&sn) {
+                let cur = config::Config::get_option("id");
+                if cur != sn {
+                    log::info!("seed device id from SN: {cur} -> {sn}");
+                    config::Config::set_key_confirmed(false);
+                    config::Config::set_id(&sn);
+                }
             }
         }
         std::thread::spawn(move || start_server(true));

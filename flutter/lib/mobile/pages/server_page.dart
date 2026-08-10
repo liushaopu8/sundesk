@@ -84,19 +84,34 @@ class _ServerPageState extends State<ServerPage> {
     return ChangeNotifierProvider.value(
         value: gFFI.serverModel,
         child: Consumer<ServerModel>(
-            builder: (context, serverModel, child) => SingleChildScrollView(
-                  controller: gFFI.serverModel.controller,
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        buildPresetPasswordWarningMobile(),
-                        const SunDeskStatusCard(),
-                        const ConnectionManager(),
-                        SizedBox.fromSize(size: const Size(0, 15.0)),
-                      ],
+            builder: (context, serverModel, child) => Column(
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        controller: gFFI.serverModel.controller,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              buildPresetPasswordWarningMobile(),
+                              const SunDeskStatusCard(),
+                              const ConnectionManager(),
+                              SizedBox.fromSize(size: const Size(0, 15.0)),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+                    // Version pinned above the bottom navigation bar
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: Text(
+                        version.isEmpty ? '-' : version,
+                        style: const TextStyle(
+                            fontSize: 12, color: Colors.grey),
+                      ),
+                    ),
+                  ],
                 )));
   }
 }
@@ -155,29 +170,7 @@ class SunDeskStatusCard extends StatelessWidget {
     return PaddingCard(
         title: translate('Your Device'),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          // ID
-          Row(children: [
-            const Icon(Icons.perm_identity,
-                    color: Colors.grey, size: iconSize)
-                .marginOnly(right: iconMarginRight),
-            Text(
-              translate('ID'),
-              style: textStyleHeading,
-            )
-          ]),
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text(
-              serverModel.serverId.value.text,
-              style: textStyleValue,
-            ),
-            IconButton(
-                visualDensity: VisualDensity.compact,
-                icon: Icon(Icons.copy_outlined),
-                onPressed: () {
-                  copyToClipboard(serverModel.serverId.value.text.trim());
-                })
-          ]).marginOnly(left: 39, bottom: 10),
-          // SN
+          // SN (the device ID is seeded from the SN, so only SN is shown)
           Row(children: [
             const Icon(Icons.confirmation_number,
                     color: Colors.grey, size: iconSize)
@@ -241,21 +234,6 @@ class SunDeskStatusCard extends StatelessWidget {
                   },
                   label: Text(translate("Start service"))).marginOnly(top: 15),
             ),
-          // Version (near the bottom of the share screen)
-          Row(children: [
-            const Icon(Icons.info_outline, color: Colors.grey, size: iconSize)
-                .marginOnly(right: iconMarginRight),
-            Text(
-              translate('Version'),
-              style: textStyleHeading,
-            )
-          ]).marginOnly(top: 10),
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text(
-              version.isEmpty ? '-' : version,
-              style: textStyleValue,
-            ),
-          ]).marginOnly(left: 39),
         ]));
   }
 }

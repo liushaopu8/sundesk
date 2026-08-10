@@ -155,3 +155,41 @@ fun getScreenSize(windowManager: WindowManager) : Pair<Int, Int>{
     Log.d("common", "translate:$LOCAL_NAME")
     return FFI.translateLocale(LOCAL_NAME, input)
 }
+
+// SunDesk: read the device SN with a 4-level fallback. Shared by the
+// get_device_sn MethodChannel handler and MainService (which seeds the Rust
+// device ID from the SN so devices are reachable by SN instead of a random ID).
+fun getDeviceSn(context: Context): String {
+    var sn = ""
+    try {
+        val clazz = Class.forName("android.os.SystemProperties")
+        val get = clazz.getMethod("get", String::class.java, String::class.java)
+        sn = (get.invoke(null, "ro.serialno", "") as String).trim()
+        if (sn.isEmpty()) {
+            sn = (get.invoke(null, "ro.boot.serialno", "") as String).trim()
+        }
+        Log.i("main", "SystemProperties serialno: $sn")
+    } catch (e: Exception) {
+        Log.w("main", "SystemProperties reflection failed: ${e.message}")
+    }
+    if (sn.isEmpty()) {
+        try {
+            sn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                Build.getSerial()
+            } else {
+                @Suppress("DEPRECATION")
+                Build.SERIAL
+            }
+        } catch (e: Exception) {
+            Log.w("main", "Build.getSerial failed: ${e.message}")
+        }
+    }
+    if (sn.isEmpty() || sn == Build.UNKNOWN || sn == "unknown") {
+        sn = Settings.Secure.getString(
+            context.contentResolver,
+            Settings.Secure.ANDROID_ID
+        ) ?: "unknown"
+    }
+    Log.i("main", "Device SN result: $sn")
+    return sn
+}
