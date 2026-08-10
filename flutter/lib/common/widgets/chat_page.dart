@@ -135,65 +135,9 @@ class ChatPage extends StatelessWidget implements PageShape {
                       showOtherUsersName: false,
                       textColor: Colors.white,
                       maxWidth: constraints.maxWidth * 0.7,
-                      // SunDesk: align own messages right / peer messages left
-                      // (dash_chat's default row alignment is unreliable here).
-                      messageRowBuilder: type == ChatPageType.mobileMain
-                          ? (message, previousMessage, nextMessage,
-                              isAfterDateSeparator, isBeforeDateSeparator) {
-                              final isOwnMessage =
-                                  message.user.id == chatModel.me.id;
-                              return Row(
-                                mainAxisAlignment: isOwnMessage
-                                    ? MainAxisAlignment.end
-                                    : MainAxisAlignment.start,
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  ConstrainedBox(
-                                    constraints: BoxConstraints(
-                                        maxWidth:
-                                            constraints.maxWidth * 0.7),
-                                    child: Container(
-                                      margin: isOwnMessage
-                                          ? const EdgeInsets.only(left: 40)
-                                          : const EdgeInsets.only(right: 40),
-                                      padding: const EdgeInsets.all(10),
-                                      decoration: BoxDecoration(
-                                        color: isOwnMessage
-                                            ? MyTheme.accent
-                                            : Colors.blueGrey,
-                                        borderRadius: BorderRadius.only(
-                                          topLeft: const Radius.circular(8),
-                                          topRight: const Radius.circular(8),
-                                          bottomLeft: Radius.circular(
-                                              isOwnMessage ? 8 : 2),
-                                          bottomRight: Radius.circular(
-                                              isOwnMessage ? 2 : 8),
-                                        ),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment: isOwnMessage
-                                            ? CrossAxisAlignment.end
-                                            : CrossAxisAlignment.start,
-                                        children: [
-                                          Text(message.text,
-                                              style: const TextStyle(
-                                                  color: Colors.white)),
-                                          Text(
-                                            "${message.createdAt.hour}:${message.createdAt.minute.toString().padLeft(2, '0')}",
-                                            style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 8),
-                                          ).marginOnly(top: 3),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              );
-                            }
-                          : null,
                       messageTextBuilder: (message, _, __) {
-                        final isOwnMessage = message.user.id.isBlank!;
+                        final isOwnMessage =
+                            message.user.id == chatModel.me.id;
                         return Column(
                           crossAxisAlignment: isOwnMessage
                               ? CrossAxisAlignment.end
@@ -213,7 +157,8 @@ class ChatPage extends StatelessWidget implements PageShape {
                       },
                       messageDecorationBuilder:
                           (message, previousMessage, nextMessage) {
-                        final isOwnMessage = message.user.id.isBlank!;
+                        final isOwnMessage =
+                            message.user.id == chatModel.me.id;
                         return defaultMessageDecoration(
                           color:
                               isOwnMessage ? MyTheme.accent : Colors.blueGrey,
