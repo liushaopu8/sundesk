@@ -93,7 +93,6 @@ class _ServerPageState extends State<ServerPage> {
                         buildPresetPasswordWarningMobile(),
                         const SunDeskStatusCard(),
                         const ConnectionManager(),
-                        const PermissionChecker(),
                         SizedBox.fromSize(size: const Size(0, 15.0)),
                       ],
                     ),
@@ -156,28 +155,30 @@ class SunDeskStatusCard extends StatelessWidget {
     return PaddingCard(
         title: translate('Your Device'),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          // ID
-          Row(children: [
-            const Icon(Icons.perm_identity,
-                    color: Colors.grey, size: iconSize)
-                .marginOnly(right: iconMarginRight),
-            Text(
-              translate('ID'),
-              style: textStyleHeading,
-            )
-          ]),
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text(
-              serverModel.serverId.value.text,
-              style: textStyleValue,
-            ),
-            IconButton(
-                visualDensity: VisualDensity.compact,
-                icon: Icon(Icons.copy_outlined),
-                onPressed: () {
-                  copyToClipboard(serverModel.serverId.value.text.trim());
-                })
-          ]).marginOnly(left: 39, bottom: 10),
+          // ID (hidden in release; kept in dev because the web side still connects by ID)
+          if (!kReleaseMode) ...[
+            Row(children: [
+              const Icon(Icons.perm_identity,
+                      color: Colors.grey, size: iconSize)
+                  .marginOnly(right: iconMarginRight),
+              Text(
+                translate('ID'),
+                style: textStyleHeading,
+              )
+            ]),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Text(
+                serverModel.serverId.value.text,
+                style: textStyleValue,
+              ),
+              IconButton(
+                  visualDensity: VisualDensity.compact,
+                  icon: Icon(Icons.copy_outlined),
+                  onPressed: () {
+                    copyToClipboard(serverModel.serverId.value.text.trim());
+                  })
+            ]).marginOnly(left: 39, bottom: 10),
+          ],
           // SN
           Row(children: [
             const Icon(Icons.confirmation_number,
@@ -199,6 +200,21 @@ class SunDeskStatusCard extends StatelessWidget {
                 onPressed: () {
                   copyToClipboard(serverModel.deviceSn.trim());
                 })
+          ]).marginOnly(left: 39, bottom: 10),
+          // Version
+          Row(children: [
+            const Icon(Icons.info_outline, color: Colors.grey, size: iconSize)
+                .marginOnly(right: iconMarginRight),
+            Text(
+              translate('Version'),
+              style: textStyleHeading,
+            )
+          ]),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Text(
+              version.isEmpty ? '-' : version,
+              style: textStyleValue,
+            ),
           ]).marginOnly(left: 39, bottom: 10),
           // Unattended
           SwitchListTile(
@@ -226,29 +242,6 @@ class SunDeskStatusCard extends StatelessWidget {
                   serverModel.setApproveMode('click');
                 }
               }),
-          if (unattended)
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Row(children: [
-                const Icon(Icons.password, color: Colors.grey, size: iconSize)
-                    .marginOnly(right: iconMarginRight),
-                Text(
-                  translate('Password'),
-                  style: textStyleHeading,
-                )
-              ]),
-              Row(children: [
-                Text(
-                  kUnattendedFixedPassword,
-                  style: textStyleValue,
-                ),
-                IconButton(
-                    visualDensity: VisualDensity.compact,
-                    icon: Icon(Icons.copy_outlined),
-                    onPressed: () {
-                      copyToClipboard(kUnattendedFixedPassword);
-                    })
-              ]),
-            ]).marginOnly(left: 0, bottom: 10),
           statusRow(),
           if (!serverModel.isStart)
             Center(
