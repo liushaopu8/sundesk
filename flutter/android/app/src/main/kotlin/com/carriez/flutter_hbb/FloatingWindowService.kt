@@ -41,12 +41,12 @@ class FloatingWindowService : Service(), View.OnTouchListener {
     private var dragging = false
     private var lastDownX = 0f
     private var lastDownY = 0f
-    private var viewCreated = false;
     private var keepScreenOn = KeepScreenOn.DURING_CONTROLLED
 
     companion object {
         private val logTag = "floatingService"
         private var firstCreate = true
+        private var viewCreated = false
         private var viewWidth = 120
         private var viewHeight = 120
         private const val MIN_VIEW_SIZE = 32 // size 0 does not help prevent the service from being killed
@@ -83,13 +83,22 @@ class FloatingWindowService : Service(), View.OnTouchListener {
     override fun onDestroy() {
         super.onDestroy()
         if (viewCreated) {
-            windowManager.removeView(floatingView)
+            try {
+                windowManager.removeView(floatingView)
+            } catch (e: Exception) {
+                Log.d(logTag, "removeView failed: $e")
+            }
+            viewCreated = false
         }
         handler.removeCallbacks(runnable)
     }
 
     @SuppressLint("ClickableViewAccessibility")
     private fun createView(windowManager: WindowManager) {
+        if (viewCreated) {
+            Log.d(logTag, "createView: view already exists, skip duplicate")
+            return
+        }
         floatingView = ImageView(this)
         viewCreated = true
         originalDrawable = resources.getDrawable(R.drawable.floating_window, null)
