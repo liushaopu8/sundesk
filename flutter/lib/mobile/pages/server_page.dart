@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hbb/models/chat_model.dart';
@@ -156,30 +155,28 @@ class SunDeskStatusCard extends StatelessWidget {
     return PaddingCard(
         title: translate('Your Device'),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          // ID (hidden in release; kept in dev because the web side still connects by ID)
-          if (!kReleaseMode) ...[
-            Row(children: [
-              const Icon(Icons.perm_identity,
-                      color: Colors.grey, size: iconSize)
-                  .marginOnly(right: iconMarginRight),
-              Text(
-                translate('ID'),
-                style: textStyleHeading,
-              )
-            ]),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Text(
-                serverModel.serverId.value.text,
-                style: textStyleValue,
-              ),
-              IconButton(
-                  visualDensity: VisualDensity.compact,
-                  icon: Icon(Icons.copy_outlined),
-                  onPressed: () {
-                    copyToClipboard(serverModel.serverId.value.text.trim());
-                  })
-            ]).marginOnly(left: 39, bottom: 10),
-          ],
+          // ID
+          Row(children: [
+            const Icon(Icons.perm_identity,
+                    color: Colors.grey, size: iconSize)
+                .marginOnly(right: iconMarginRight),
+            Text(
+              translate('ID'),
+              style: textStyleHeading,
+            )
+          ]),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Text(
+              serverModel.serverId.value.text,
+              style: textStyleValue,
+            ),
+            IconButton(
+                visualDensity: VisualDensity.compact,
+                icon: Icon(Icons.copy_outlined),
+                onPressed: () {
+                  copyToClipboard(serverModel.serverId.value.text.trim());
+                })
+          ]).marginOnly(left: 39, bottom: 10),
           // SN
           Row(children: [
             const Icon(Icons.confirmation_number,
@@ -201,21 +198,6 @@ class SunDeskStatusCard extends StatelessWidget {
                 onPressed: () {
                   copyToClipboard(serverModel.deviceSn.trim());
                 })
-          ]).marginOnly(left: 39, bottom: 10),
-          // Version
-          Row(children: [
-            const Icon(Icons.info_outline, color: Colors.grey, size: iconSize)
-                .marginOnly(right: iconMarginRight),
-            Text(
-              translate('Version'),
-              style: textStyleHeading,
-            )
-          ]),
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text(
-              version.isEmpty ? '-' : version,
-              style: textStyleValue,
-            ),
           ]).marginOnly(left: 39, bottom: 10),
           // Unattended
           SwitchListTile(
@@ -259,6 +241,21 @@ class SunDeskStatusCard extends StatelessWidget {
                   },
                   label: Text(translate("Start service"))).marginOnly(top: 15),
             ),
+          // Version (near the bottom of the share screen)
+          Row(children: [
+            const Icon(Icons.info_outline, color: Colors.grey, size: iconSize)
+                .marginOnly(right: iconMarginRight),
+            Text(
+              translate('Version'),
+              style: textStyleHeading,
+            )
+          ]).marginOnly(top: 10),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Text(
+              version.isEmpty ? '-' : version,
+              style: textStyleValue,
+            ),
+          ]).marginOnly(left: 39),
         ]));
   }
 }
