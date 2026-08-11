@@ -109,6 +109,12 @@ class ServerModel with ChangeNotifier {
 
   setApproveMode(String mode) async {
     await bind.mainSetOption(key: kOptionApproveMode, value: mode);
+    // SunDesk: keep the in-memory state in sync so the Unattended switch in
+    // the Share screen reflects what was actually persisted.
+    if (_approveMode != mode) {
+      _approveMode = mode;
+      notifyListeners();
+    }
     /*
     if (mode != 'password') {
       await bind.mainSetOption(
@@ -600,7 +606,14 @@ class ServerModel with ChangeNotifier {
       }
       scrollToBottom();
       notifyListeners();
-      if (isAndroid && !client.authorized) showLoginDialog(client);
+      // SunDesk: in unattended (password) mode no one is at the device, so the
+      // controller must connect with the configured password and no accept
+      // dialog may pop up. Wrong/empty passwords are rejected by the Rust core.
+      if (isAndroid &&
+          !client.authorized &&
+          bind.mainGetOptionSync(key: kOptionApproveMode) != 'password') {
+        showLoginDialog(client);
+      }
       if (isAndroid) androidUpdatekeepScreenOn();
     } catch (e) {
       debugPrint("Failed to call loginRequest,error:$e");

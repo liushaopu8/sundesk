@@ -2793,7 +2793,17 @@ impl Connection {
                             return keep_alive;
                         }
                     }
-                    self.try_start_cm(lr.my_id, lr.my_name, false);
+                    // SunDesk: in unattended (password) mode there is no one at
+                    // the device to click Accept, so reject an empty password
+                    // with a password-required error instead of offering a dialog.
+                    if password::approve_mode() != ApproveMode::Password {
+                        self.try_start_cm(lr.my_id, lr.my_name, false);
+                    } else {
+                        self.send_login_error(
+                            crate::client::LOGIN_MSG_DESKTOP_SESSION_NOT_READY_PASSWORD_EMPTY,
+                        )
+                        .await;
+                    }
                 } else {
                     self.send_login_error(
                         crate::client::LOGIN_MSG_DESKTOP_SESSION_NOT_READY_PASSWORD_EMPTY,
@@ -2811,7 +2821,11 @@ impl Connection {
                     if err_msg.is_empty() {
                         self.send_login_error(crate::client::LOGIN_MSG_PASSWORD_WRONG)
                             .await;
-                        self.try_start_cm(lr.my_id, lr.my_name, false);
+                        // SunDesk: unattended mode has no one to accept manually,
+                        // so skip the accept dialog for wrong-password attempts.
+                        if password::approve_mode() != ApproveMode::Password {
+                            self.try_start_cm(lr.my_id, lr.my_name, false);
+                        }
                     } else {
                         self.send_login_error(
                             crate::client::LOGIN_MSG_DESKTOP_SESSION_NOT_READY_PASSWORD_WRONG,

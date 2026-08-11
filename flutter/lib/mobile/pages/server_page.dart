@@ -104,11 +104,11 @@ class _ServerPageState extends State<ServerPage> {
                     ),
                     // Version pinned above the bottom navigation bar
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
+                      padding: const EdgeInsets.only(bottom: 14.0),
                       child: Text(
                         version.isEmpty ? '-' : version,
                         style: const TextStyle(
-                            fontSize: 12, color: Colors.grey),
+                            fontSize: 16, color: Colors.grey),
                       ),
                     ),
                   ],
