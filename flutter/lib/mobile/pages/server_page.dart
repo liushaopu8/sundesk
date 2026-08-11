@@ -70,6 +70,22 @@ class _ServerPageState extends State<ServerPage> {
       await gFFI.serverModel.fetchDeviceSn();
     });
     gFFI.serverModel.checkAndroidPermission();
+    // SunDesk: input control is enabled by default, but injecting touches on
+    // Android requires the accessibility InputService. The service can only be
+    // turned on by the user in system settings, so ask them once at startup.
+    // The enable-keyboard option is the memory (set to 'Y' here and by
+    // changeStatue when the service connects), so we never re-prompt.
+    _maybePromptInputPermission();
+  }
+
+  void _maybePromptInputPermission() {
+    if (!isAndroid) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      if (bind.mainGetOptionSync(key: kOptionEnableKeyboard) == 'Y') return;
+      showInputWarnAlert(gFFI);
+      bind.mainSetOption(key: kOptionEnableKeyboard, value: defaultOptionYes);
+    });
   }
 
   @override

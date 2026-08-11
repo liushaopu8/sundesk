@@ -198,10 +198,6 @@ class ServerModel with ChangeNotifier {
       });
     }
 
-    // Initial keyboard status is off on mobile
-    if (isMobile) {
-      bind.mainSetOption(key: kOptionEnableKeyboard, value: 'N');
-    }
   }
 
   /// 1. check android permission
