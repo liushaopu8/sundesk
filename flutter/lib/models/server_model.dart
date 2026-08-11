@@ -513,9 +513,12 @@ class ServerModel with ChangeNotifier {
         break;
       case "input":
         if (_inputOk != value) {
+          // SunDesk: store a literal 'Y'/'N' so enable-keyboard doubles as
+          // honest memory for the accessibility prompt (defaultOptionYes is
+          // '' on non-custom builds, and set_option deletes empty values).
           bind.mainSetOption(
               key: kOptionEnableKeyboard,
-              value: value ? defaultOptionYes : 'N');
+              value: value ? 'Y' : 'N');
         }
         _inputOk = value;
         break;
