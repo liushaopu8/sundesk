@@ -239,7 +239,8 @@ class SunDeskStatusCard extends StatelessWidget {
               child: ElevatedButton.icon(
                   icon: const Icon(Icons.play_arrow),
                   onPressed: () {
-                    if (gFFI.userModel.userName.value.isEmpty &&
+                    if (!bind.isCustomClient() &&
+                        gFFI.userModel.userName.value.isEmpty &&
                         bind.mainGetLocalOption(key: "show-scam-warning") !=
                             "N") {
                       showScamWarning(context, serverModel);
