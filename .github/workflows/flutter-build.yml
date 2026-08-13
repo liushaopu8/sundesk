@@ -2116,6 +2116,7 @@ jobs:
 
   build-rustdesk-web:
     name: build-rustdesk-web
+    if: false
     runs-on: ubuntu-22.04
     permissions:
       contents: read
