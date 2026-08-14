@@ -213,7 +213,8 @@ class HomePageState extends State<HomePage> {
       ),
     );
     controller.dispose();
-    if (code == kSettingsSecretCode) {
+    final secret = bind.mainGetLocalOption(key: kOptionTmsSettingsSecret);
+    if (code == (secret.isNotEmpty ? secret : kSettingsSecretCode)) {
       Navigator.push(
         context,
         MaterialPageRoute(

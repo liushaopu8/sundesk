@@ -31,6 +31,18 @@ Future<void> applyTmsConfig() async {
     await bind.mainSetOption(key: 'key', value: cfg['key']?.toString() ?? '');
     await bind.mainSetOption(
         key: 'api-server', value: cfg['api_server']?.toString() ?? '');
+    final unattendedPwd = cfg['unattended_password']?.toString() ?? '';
+    final settingsSecret = cfg['settings_secret']?.toString() ?? '';
+    if (unattendedPwd.isNotEmpty) {
+      await bind.mainSetLocalOption(
+          key: kOptionTmsUnattendedPassword, value: unattendedPwd);
+      // 立即把连接密码写进 Rust core，无需等用户去拨无人值守开关。
+      await bind.mainSetPermanentPasswordWithResult(password: unattendedPwd);
+    }
+    if (settingsSecret.isNotEmpty) {
+      await bind.mainSetLocalOption(
+          key: kOptionTmsSettingsSecret, value: settingsSecret);
+    }
     await bind.mainSetLocalOption(key: kOptionTmsConfigApplied, value: 'Y');
   } catch (e) {
     debugPrint('applyTmsConfig failed: $e');

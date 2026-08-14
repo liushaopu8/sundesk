@@ -467,6 +467,12 @@ const String kTmsConfigPath = '/sdcard/dms/sundesk_config.json';
 /// SunDesk: 标记 TMS 配置已应用的本地 option。
 const String kOptionTmsConfigApplied = 'tms-config-applied';
 
+/// SunDesk: TMS 下发的无人值守（连接用）密码。
+const String kOptionTmsUnattendedPassword = 'tms-unattended-password';
+
+/// SunDesk: TMS 下发的设置暗码。
+const String kOptionTmsSettingsSecret = 'tms-settings-secret';
+
 /// flutter/packages/flutter/lib/src/services/keyboard_key.dart -> _keyLabels
 /// see [LogicalKeyboardKey.keyLabel]
 const Map<int, String> logicalKeyMap = <int, String>{
