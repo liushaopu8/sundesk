@@ -10,8 +10,9 @@ import 'platform_model.dart';
 /// Apply the ID/Relay server config pushed down by TMS.
 ///
 /// Reads [kTmsConfigPath] and writes the values into the Rust core options.
-/// Once applied, the in-app "ID/Relay Server" entry is hidden (see
-/// [kOptionTmsConfigApplied]) so the user cannot change the server manually.
+/// Server fields (id_server/relay_server/key) are required; api_server is optional.
+/// TMS config is re-applied on every startup, so manual overrides in Settings
+/// will be overwritten on the next reboot unless the TMS config file is removed.
 Future<void> applyTmsConfig() async {
   if (!isAndroid) return;
   final file = File(kTmsConfigPath);
@@ -52,8 +53,6 @@ Future<void> applyTmsConfig() async {
       await bind.mainSetLocalOption(
           key: kOptionTmsSettingsSecret, value: settingsSecret);
     }
-    // 仅当必填字段齐全时才标记已应用，隐藏设置入口
-    await bind.mainSetLocalOption(key: kOptionTmsConfigApplied, value: 'Y');
   } catch (e) {
     debugPrint('applyTmsConfig failed: $e');
   }

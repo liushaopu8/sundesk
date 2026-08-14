@@ -464,9 +464,6 @@ const String kSettingsSecretCode = 'sundesk#9527';
 // const String kTmsConfigPath = '/storage/emulated/0/.sunDesk/sundesk_config.json';
 const String kTmsConfigPath = '/sdcard/dms/sundesk_config.json';
 
-/// SunDesk: 标记 TMS 配置已应用的本地 option。
-const String kOptionTmsConfigApplied = 'tms-config-applied';
-
 /// SunDesk: TMS 下发的无人值守（连接用）密码。
 const String kOptionTmsUnattendedPassword = 'tms-unattended-password';
 
