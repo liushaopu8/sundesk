@@ -10,7 +10,7 @@ import 'platform_model.dart';
 /// Apply the ID/Relay server config pushed down by TMS.
 ///
 /// Reads [kTmsConfigPath] and writes the values into the Rust core options.
-/// Server fields (id_server/relay_server/key) are required; api_server is optional.
+/// Server fields (rendezvous-server/relay-server/key) are required; api-server is optional.
 /// TMS config is re-applied on every startup, so manual overrides in Settings
 /// will be overwritten on the next reboot unless the TMS config file is removed.
 Future<void> applyTmsConfig() async {
@@ -25,9 +25,9 @@ Future<void> applyTmsConfig() async {
       debugPrint('applyTmsConfig: unexpected json type: ${cfg.runtimeType}');
       return;
     }
-    // 必须三字段：id_server、relay_server、key 都非空，才算合法 TMS 配置
-    final idServer = cfg['id_server']?.toString() ?? '';
-    final relayServer = cfg['relay_server']?.toString() ?? '';
+    // Required fields from TMS (kebab-case keys).
+    final idServer = cfg['rendezvous-server']?.toString() ?? '';
+    final relayServer = cfg['relay-server']?.toString() ?? '';
     final key = cfg['key']?.toString() ?? '';
     if (idServer.isEmpty || relayServer.isEmpty || key.isEmpty) {
       debugPrint('applyTmsConfig: missing required fields, ignoring config');
@@ -36,23 +36,27 @@ Future<void> applyTmsConfig() async {
     await bind.mainSetOption(key: 'custom-rendezvous-server', value: idServer);
     await bind.mainSetOption(key: 'relay-server', value: relayServer);
     await bind.mainSetOption(key: 'key', value: key);
-    // api_server 可选：有就写，没有就保留原值
-    final apiServer = cfg['api_server']?.toString() ?? '';
+    // api-server (optional).
+    final apiServer = cfg['api-server']?.toString() ?? '';
     if (apiServer.isNotEmpty) {
       await bind.mainSetOption(key: 'api-server', value: apiServer);
     }
-    final unattendedPwd = cfg['unattended_password']?.toString() ?? '';
-    final settingsSecret = cfg['settings_secret']?.toString() ?? '';
-    if (unattendedPwd.isNotEmpty) {
+    // access-password → unattended access password.
+    final accessPwd = cfg['access-password']?.toString() ?? '';
+    if (accessPwd.isNotEmpty) {
       await bind.mainSetLocalOption(
-          key: kOptionTmsUnattendedPassword, value: unattendedPwd);
-      // 立即把连接密码写进 Rust core，无需等用户去拨无人值守开关。
-      await bind.mainSetPermanentPasswordWithResult(password: unattendedPwd);
+          key: kOptionTmsUnattendedPassword, value: accessPwd);
+      await bind.mainSetPermanentPasswordWithResult(password: accessPwd);
+      await bind.mainSetOption(key: 'enable-unattended-access', value: 'Y');
     }
+    // settings-secret → settings secret.
+    final settingsSecret = cfg['settings-secret']?.toString() ?? '';
     if (settingsSecret.isNotEmpty) {
       await bind.mainSetLocalOption(
           key: kOptionTmsSettingsSecret, value: settingsSecret);
+      await bind.mainSetOption(key: 'settings-secret', value: settingsSecret);
     }
+    await bind.mainSetLocalOption(key: kOptionTmsConfigApplied, value: 'Y');
   } catch (e) {
     debugPrint('applyTmsConfig failed: $e');
   }
