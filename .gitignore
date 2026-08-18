@@ -4,6 +4,7 @@
 .idea
 .DS_Store
 .env
+.codegraph
 libsciter-gtk.so
 src/ui/inline.rs
 extractor
@@ -32,6 +33,7 @@ appimage/*.xz
 # flutter
 flutter/linux/build/**
 flutter/linux/cmake-build-debug/**
+flutter/web/build/**
 # flatpak
 flatpak/.flatpak-builder/**
 flatpak/ccache/**
@@ -55,4 +57,3 @@ examples/**/target/
 vcpkg_installed
 flutter/lib/generated_plugin_registrant.dart
 libsciter.dylib
-flutter/web/
