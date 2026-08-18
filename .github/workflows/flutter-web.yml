@@ -9,7 +9,7 @@ on:
       - '.github/workflows/flutter-web.yml'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build-web:
@@ -17,4 +17,4 @@ jobs:
     secrets: inherit
     with:
       upload-artifact: true
-      upload-tag: "web-${{ github.run_number }}"
+      upload-tag: ""
