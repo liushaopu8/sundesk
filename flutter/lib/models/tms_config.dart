@@ -11,8 +11,8 @@ import 'platform_model.dart';
 ///
 /// Reads [kTmsConfigPath] and writes the values into the Rust core options.
 /// Server fields (rendezvous-server/relay-server/key) are required; api-server is optional.
-/// TMS config is re-applied on every startup, so manual overrides in Settings
-/// will be overwritten on the next reboot unless the TMS config file is removed.
+/// TMS config is re-applied on every startup; manual overrides in Settings are preserved
+/// (settings are protected by settings-secret).
 Future<void> applyTmsConfig() async {
   if (!isAndroid) return;
   final file = File(kTmsConfigPath);
@@ -56,7 +56,6 @@ Future<void> applyTmsConfig() async {
           key: kOptionTmsSettingsSecret, value: settingsSecret);
       await bind.mainSetOption(key: 'settings-secret', value: settingsSecret);
     }
-    await bind.mainSetLocalOption(key: kOptionTmsConfigApplied, value: 'Y');
   } catch (e) {
     debugPrint('applyTmsConfig failed: $e');
   }
