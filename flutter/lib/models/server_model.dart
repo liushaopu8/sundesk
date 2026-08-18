@@ -265,9 +265,13 @@ class ServerModel with ChangeNotifier {
     }
     var stopped = await mainGetBoolOption(kOptionStopService);
     final oldPwdText = _serverPasswd.text;
+    // SunDesk: hide the one-time password once any client is connected,
+    // to avoid leaking the access password on the controlled device's screen.
+    final hasConnectedClient = clients.any((c) => !c.disconnected);
     if (stopped ||
         verificationMethod == kUsePermanentPassword ||
-        _approveMode == 'click') {
+        _approveMode == 'click' ||
+        hasConnectedClient) {
       _serverPasswd.text = '-';
     } else {
       if (_serverPasswd.text != temporaryPassword &&
