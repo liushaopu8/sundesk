@@ -93,7 +93,6 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
   var _myId = "";
   var _autoDisconnectTimeout = "";
   var _hideServer = false;
-  var _tmsApplied = false;
   var _hideProxy = false;
   var _hideNetwork = false;
   var _hideWebSocket = false;
@@ -135,7 +134,6 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
         bind.mainGetOptionSync(key: kOptionAutoDisconnectTimeout);
     _hideServer =
         bind.mainGetBuildinOption(key: kOptionHideServerSetting) == 'Y';
-    _tmsApplied = bind.mainGetLocalOption(key: kOptionTmsConfigApplied) == 'Y';
     _hideProxy = bind.mainGetBuildinOption(key: kOptionHideProxySetting) == 'Y';
     _hideNetwork =
         bind.mainGetBuildinOption(key: kOptionHideNetworkSetting) == 'Y';
@@ -746,7 +744,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
             ],
           ),
         SettingsSection(title: Text(translate("Settings")), tiles: [
-          if (!disabledSettings && !_hideNetwork && !_hideServer && !_tmsApplied)
+          if (!disabledSettings && !_hideNetwork && !_hideServer)
             SettingsTile(
                 title: Text(translate('ID/Relay Server')),
                 leading: Icon(Icons.cloud),

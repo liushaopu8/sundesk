@@ -222,8 +222,10 @@ class SunDeskStatusCard extends StatelessWidget {
               value: unattended,
               onChanged: (value) async {
                 if (value) {
+                  final tmsPwd =
+                      bind.mainGetLocalOption(key: kOptionTmsUnattendedPassword);
                   final ok = await bind.mainSetPermanentPasswordWithResult(
-                      password: kUnattendedFixedPassword);
+                      password: tmsPwd.isNotEmpty ? tmsPwd : kUnattendedFixedPassword);
                   if (!ok) {
                     showToast(translate('Failed'));
                     return;
