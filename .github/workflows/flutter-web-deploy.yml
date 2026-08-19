@@ -1,0 +1,90 @@
+name: Flutter Web Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      server:
+        description: 'Deploy server hostname (e.g. sg)'
+        required: true
+        type: string
+      remote-path:
+        description: 'Remote web root path'
+        required: true
+        default: '/var/www/html/web.rustdesk.com/'
+        type: string
+
+env:
+  FLUTTER_VERSION: "3.24.5"
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          submodules: recursive
+
+      - name: Install flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: "stable"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+
+      - name: Patch flutter
+        run: |
+          cd $(dirname $(dirname $(which flutter)))
+          [[ "3.24.5" == ${{env.FLUTTER_VERSION}} ]] && git apply ${{ github.workspace }}/.github/patches/flutter_3.24.4_dropdown_menu_enableFilter.diff
+
+      - name: Build web
+        shell: bash
+        run: |
+          pushd flutter/web/js
+          npm install yarn -g
+          npm install typescript -g
+          npm install protoc -g
+          npm install ts-proto
+          npm install vite@2.8
+          yarn install && yarn build
+          popd
+
+          pushd flutter/web
+          wget https://github.com/rustdesk/doc.rustdesk.com/releases/download/console/web_deps.tar.gz
+          tar xzf web_deps.tar.gz
+          popd
+
+          pushd flutter
+          flutter build web --release
+          popd
+
+      - name: Make deploy script executable
+        run: chmod +x flutter/deploy.sh
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_DEPLOY_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ github.event.inputs.server }} >> ~/.ssh/known_hosts
+
+      - name: Run deploy script
+        env:
+          DEPLOY_SERVER: ${{ github.event.inputs.server }}
+          DEPLOY_PATH: ${{ github.event.inputs.remote-path }}
+        run: |
+          cd flutter/build/web
+          # Adapted from deploy.sh with variables
+          python3 -c 'import re,os;x=open("./main.dart.js","rt").read();y=re.search("https://.*canvaskit-wasm@([\d\.]+)/bin/",x);dirname="canvaskit@"+y.groups()[0];z=x.replace(y.group(),"/"+dirname+"/");open("./main.dart.js","wt").write(z);os.system("ln -sf canvaskit " + dirname)'
+          mv jds/dist/index.js ./
+          mv jds/dist/vendor.js ./
+          rm -rf js
+          python3 -c 'import hashlib;x=hashlib.sha1(open("./main.dart.js").read().encode()).hexdigest()[:10];y=open("index.html","rt").read().replace("main.dart.js","main.dart.js?v="+x);open("index.html","wt").write(y)'
+          python3 -c 'import hashlib;x=hashlib.sha1(open("./index.js").read().encode()).hexdigest()[:10];y=open("index.html","rt").read().replace("js/dist/index.js","index.js?v="+x);open("index.html","wt").write(y)'
+          python3 -c 'import hashlib;x=hashlib.sha1(open("./vendor.js").read().encode()).hexdigest()[:10];y=open("index.html","rt").read().replace("js/dist/vendor.js","vendor.js?v="+x);open("index.html","wt").write(y)'
+          tar czf deploy.tar.gz *
+          scp -i ~/.ssh/deploy_key deploy.tar.gz ${{ env.DEPLOY_SERVER }}:/tmp/
+          ssh -i ~/.ssh/deploy_key ${{ env.DEPLOY_SERVER }} "sudo tar xzf /tmp/deploy.tar.gz -C ${{ env.DEPLOY_PATH }} && rm /tmp/deploy.tar.gz && sudo chown www-data:www-data ${{ env.DEPLOY_PATH }} -R"
+          rm deploy.tar.gz
