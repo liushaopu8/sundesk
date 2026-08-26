@@ -767,7 +767,7 @@ impl RendezvousMediator {
         let uuid = hbb_common::get_uuid();
         let id = Config::get_id();
         log::info!(
-            "[sundesk-seed] register_pk: id='{}' uuid='{}' key_confirmed={} host_confirmed={}",
+            "[sundesk-seed] register_pk: id='{}' uuid={:?} key_confirmed={} host_confirmed={}",
             id,
             uuid,
             Config::get_key_confirmed(),
