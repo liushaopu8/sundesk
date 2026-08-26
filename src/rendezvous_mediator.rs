@@ -351,6 +351,7 @@ impl RendezvousMediator {
                 update_latency();
                 match rpr.result.enum_value() {
                     Ok(register_pk_response::Result::OK) => {
+                        log::info!("[sundesk-seed] register_pk OK for id='{}' on {}", Config::get_id(), self.host);
                         Config::set_key_confirmed(true);
                         Config::set_host_key_confirmed(&self.host_prefix, true);
                         *SOLVING_PK_MISMATCH.lock().await = "".to_owned();
@@ -765,6 +766,13 @@ impl RendezvousMediator {
         let pk = Config::get_key_pair().1;
         let uuid = hbb_common::get_uuid();
         let id = Config::get_id();
+        log::info!(
+            "[sundesk-seed] register_pk: id='{}' uuid='{}' key_confirmed={} host_confirmed={}",
+            id,
+            uuid,
+            Config::get_key_confirmed(),
+            Config::get_host_key_confirmed(&self.host_prefix)
+        );
         msg_out.set_register_pk(RegisterPk {
             id,
             uuid: uuid.into(),
@@ -781,9 +789,12 @@ impl RendezvousMediator {
         {
             let mut solving = SOLVING_PK_MISMATCH.lock().await;
             if solving.is_empty() || *solving == self.host {
-                log::info!("UUID_MISMATCH received from {}", self.host);
+                let old_id = Config::get_id();
+                log::warn!("[sundesk-seed] UUID_MISMATCH from {} — current id '{}' will be OVERWRITTEN by update_id()", self.host, old_id);
                 Config::set_key_confirmed(false);
                 Config::update_id();
+                let new_id = Config::get_id();
+                log::warn!("[sundesk-seed] id after UUID_MISMATCH: '{}' -> '{}' (SN-based id was overwritten if these differ)", old_id, new_id);
                 *solving = self.host.clone();
             } else {
                 return Ok(());
@@ -806,8 +817,8 @@ impl RendezvousMediator {
             return self.register_pk(socket).await;
         }
         let id = Config::get_id();
-        log::trace!(
-            "Register my id {:?} to rendezvous server {:?}",
+        log::info!(
+            "[sundesk-seed] register_peer: id='{}' to rendezvous server {:?}",
             id,
             self.addr,
         );

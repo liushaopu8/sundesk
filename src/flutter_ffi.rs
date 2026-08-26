@@ -2141,6 +2141,10 @@ pub fn main_stop_service() {
 pub fn main_start_service() {
     #[cfg(target_os = "android")]
     {
+        log::info!(
+            "[sundesk-seed] main_start_service called, current_id='{}' (NOTE: SN seeding only happens via JNI startServer)",
+            config::Config::get_option("id")
+        );
         config::Config::set_option("stop-service".into(), "".into());
         crate::rendezvous_mediator::reset_needs_deploy_notification();
         crate::rendezvous_mediator::RendezvousMediator::restart();
@@ -3099,14 +3103,29 @@ pub mod server_side {
         // below, so the SN is what gets registered with the rendezvous server.
         if let Ok(sn) = env.get_string(&sn) {
             let sn: String = sn.into();
-            if !sn.is_empty() && crate::common::is_valid_untrusted_peer_id(&sn) {
-                let cur = config::Config::get_option("id");
+            let cur = config::Config::get_option("id");
+            let valid = crate::common::is_valid_untrusted_peer_id(&sn);
+            log::info!(
+                "[sundesk-seed] startServer SN='{}' (len={}, valid={}), current_id='{}'",
+                sn,
+                sn.len(),
+                valid,
+                cur
+            );
+            if !sn.is_empty() && valid {
                 if cur != sn {
-                    log::info!("seed device id from SN: {cur} -> {sn}");
+                    log::info!("[sundesk-seed] device id changed: {cur} -> {sn}");
                     config::Config::set_key_confirmed(false);
                     config::Config::set_id(&sn);
+                    log::info!("[sundesk-seed] after set_id, stored_id='{}'", config::Config::get_option("id"));
+                } else {
+                    log::info!("[sundesk-seed] id already equals SN, no change");
                 }
+            } else {
+                log::warn!("[sundesk-seed] SN empty or invalid, keeping current_id='{}'", cur);
             }
+        } else {
+            log::warn!("[sundesk-seed] failed to read SN JString from JNI");
         }
         std::thread::spawn(move || start_server(true));
     }
