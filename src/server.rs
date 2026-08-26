@@ -201,6 +201,11 @@ pub async fn create_tcp_connection(
     meta: ConnectionMeta,
 ) -> ResultType<()> {
     let mut stream = stream;
+    log::info!(
+        "[sundesk-conn] create_tcp_connection: peer={:?} secure={} my_id='{}' has_perms={} has_ctx={}",
+        addr, secure, Config::get_option("id"),
+        meta.control_permissions.is_some(), meta.controlled_context.is_some()
+    );
     let id = server.write().unwrap().get_new_id();
     let (sk, pk) = Config::get_key_pair();
     if secure && pk.len() == sign::PUBLICKEYBYTES && sk.len() == sign::SECRETKEYBYTES {
@@ -325,6 +330,10 @@ async fn create_relay_connection_(
         CONNECT_TIMEOUT,
     )
     .await?;
+    log::info!(
+        "[sundesk-conn] Android -> relay connected: relay='{}' peer={:?} uuid='{}' secure={} (sending request_relay)",
+        relay_server, peer_addr, uuid, secure
+    );
     let mut msg_out = RendezvousMessage::new();
     let licence_key = crate::get_key(true).await;
     msg_out.set_request_relay(RequestRelay {

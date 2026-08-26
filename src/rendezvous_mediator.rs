@@ -385,6 +385,10 @@ impl RendezvousMediator {
                 }
             }
             Some(rendezvous_message::Union::PunchHole(ph)) => {
+                log::info!(
+                    "[sundesk-conn] RECV PunchHole from hbbs: caller_socket={:?} nat_type={:?} force_relay={} udp_port={} relay_server={:?}",
+                    ph.socket_addr, ph.nat_type, ph.force_relay, ph.udp_port, ph.relay_server
+                );
                 let rz = self.clone();
                 let server = server.clone();
                 tokio::spawn(async move {
@@ -392,6 +396,10 @@ impl RendezvousMediator {
                 });
             }
             Some(rendezvous_message::Union::RequestRelay(rr)) => {
+                log::info!(
+                    "[sundesk-conn] RECV RequestRelay from hbbs: uuid='{}' relay_server='{}' caller_socket={:?} secure={}",
+                    rr.uuid, rr.relay_server, rr.socket_addr, rr.secure
+                );
                 let rz = self.clone();
                 let server = server.clone();
                 tokio::spawn(async move {
@@ -650,6 +658,20 @@ impl RendezvousMediator {
 
     async fn handle_punch_hole(&self, ph: PunchHole, server: ServerPtr) -> ResultType<()> {
         let mut peer_addr = AddrMangle::decode(&ph.socket_addr);
+        let relay = use_ws() || Config::is_proxy() || ph.force_relay;
+        log::info!(
+            "[sundesk-conn] handle_punch_hole: caller={:?} nat={:?} my_nat={} force_relay={} use_ws={} is_proxy={} udp_port={} -> relay={}",
+            peer_addr,
+            ph.nat_type.enum_value(),
+            Config::get_nat_type(),
+            ph.force_relay,
+            use_ws(),
+            Config::is_proxy(),
+            ph.udp_port,
+            (ph.nat_type.enum_value() == Ok(NatType::SYMMETRIC)
+                || Config::get_nat_type() == NatType::SYMMETRIC as i32
+                || relay)
+        );
         let last = *LAST_MSG.lock().await;
         *LAST_MSG.lock().await = (peer_addr, Instant::now());
         // skip duplicate punch hole messages
@@ -657,7 +679,6 @@ impl RendezvousMediator {
             return Ok(());
         }
         let peer_addr_v6 = hbb_common::AddrMangle::decode(&ph.socket_addr_v6);
-        let relay = use_ws() || Config::is_proxy() || ph.force_relay;
         let mut socket_addr_v6 = Default::default();
         let meta = connection_meta(
             ph.control_permissions.into_option(),
