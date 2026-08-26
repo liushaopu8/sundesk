@@ -53,14 +53,16 @@ fn initialize(app_dir: &str, custom_client_config: &str) {
     #[cfg(target_os = "android")]
     {
         // flexi_logger can't work when android_logger initialized.
-        #[cfg(debug_assertions)]
+        // SunDesk: use android_logger for BOTH debug and release so that Rust
+        // logs (including [sundesk-seed] diagnostics) are visible via logcat.
+        // Release builds previously wrote logs to a file, hiding the SN/ID
+        // registration trail needed to debug the "reboot required" issue.
         android_logger::init_once(
             android_logger::Config::default()
-                .with_max_level(log::LevelFilter::Debug) // limit log level
-                .with_tag("ffi"), // logs will show under mytag tag
+                .with_max_level(log::LevelFilter::Info)
+                .with_tag("SunDeskRust"),
         );
-        #[cfg(not(debug_assertions))]
-        hbb_common::init_log(false, "");
+        log::info!("[sundesk-seed] initialize() called, android_logger attached (release builds too)");
         #[cfg(feature = "mediacodec")]
         scrap::mediacodec::check_mediacodec();
         crate::common::test_rendezvous_server();
@@ -1358,7 +1360,9 @@ pub fn main_clip_cursor(
 }
 
 pub fn main_get_my_id() -> String {
-    get_id()
+    let id = get_id();
+    log::info!("[sundesk-seed] main_get_my_id() -> '{}'", id);
+    id
 }
 
 pub fn main_get_uuid() -> String {
@@ -1796,7 +1800,9 @@ pub fn cm_get_clients_length() -> usize {
 }
 
 pub fn main_init(app_dir: String, custom_client_config: String) {
+    log::info!("[sundesk-seed] main_init called: app_dir='{}' (len={}), custom_client_config len={}", app_dir, app_dir.len(), custom_client_config.len());
     initialize(&app_dir, &custom_client_config);
+    log::info!("[sundesk-seed] main_init done, current stored id='{}'", config::Config::get_option("id"));
 }
 
 pub fn main_device_id(id: String) {
@@ -3089,8 +3095,21 @@ pub mod server_side {
     ) {
         log::debug!("startServer from jvm");
         let mut env = env;
+        // SunDesk: ensure the Rust logger is attached even when MainService is
+        // started before/without Flutter mainInit (e.g. boot receiver, first
+        // install where the service binds early). init_once is idempotent.
+        android_logger::init_once(
+            android_logger::Config::default()
+                .with_max_level(log::LevelFilter::Info)
+                .with_tag("SunDeskRust"),
+        );
+        log::info!("[sundesk-seed] ===== JNI startServer() entered =====");
         if let Ok(app_dir) = env.get_string(&app_dir) {
-            *config::APP_DIR.write().unwrap() = app_dir.into();
+            let app_dir: String = app_dir.into();
+            log::info!("[sundesk-seed] JNI startServer app_dir='{}' (len={})", app_dir, app_dir.len());
+            *config::APP_DIR.write().unwrap() = app_dir;
+        } else {
+            log::warn!("[sundesk-seed] JNI startServer: app_dir JString is null/invalid! APP_DIR may be wrong.");
         }
         if let Ok(custom_client_config) = env.get_string(&custom_client_config) {
             if !custom_client_config.is_empty() {

@@ -561,6 +561,7 @@ pub fn check_zombie() {
 #[cfg(any(target_os = "android", target_os = "ios"))]
 #[tokio::main]
 pub async fn start_server(_is_server: bool) {
+    log::info!("[sundesk-seed] start_server() called, current id='{}'", Config::get_option("id"));
     crate::RendezvousMediator::start_all().await;
 }
 

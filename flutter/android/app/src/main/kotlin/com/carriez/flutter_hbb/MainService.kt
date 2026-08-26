@@ -245,7 +245,9 @@ class MainService : Service() {
         val configPath = prefs.getString(KEY_APP_DIR_CONFIG_PATH, "") ?: ""
         // SunDesk: pass the hardware SN so the Rust core seeds its device ID
         // from the SN, making devices reachable by SN instead of a random ID.
-        FFI.startServer(configPath, "", getDeviceSn(applicationContext))
+        val sn = getDeviceSn(applicationContext)
+        Log.i(logTag, "[sundesk-seed] MainService.onCreate configPath='$configPath' (len=${configPath.length}), sn='$sn'")
+        FFI.startServer(configPath, "", sn)
 
         createForegroundNotification()
     }
