@@ -1727,7 +1727,7 @@ impl Connection {
             return false;
         }
         self.authorized = true;
-        log::info!("[sundesk-conn] Login SUCCESS, peer authorized, session={}", self.id);
+        log::info!("[sundesk-conn] Login SUCCESS, peer authorized, session={}", self.inner.id);
         // Releases the budget `check_id_whitelist` charges against this address: only a peer
         // that got this far proved more than a self-reported id.
         self.clear_id_whitelist_failures();
@@ -2608,14 +2608,11 @@ impl Connection {
                     Some(login_request::Union::PortForward(_)) => "PortForward",
                     Some(login_request::Union::FileTransfer(_)) => "FileTransfer",
                     Some(login_request::Union::ViewCamera(_)) => "ViewCamera",
-                    Some(login_request::Union::Socks5(_)) => "Socks5",
-                    Some(login_request::Union::ReverseTunnel(_)) => "ReverseTunnel",
-                    Some(login_request::Union::TcpTunnel(_)) => "TcpTunnel",
                     Some(login_request::Union::Terminal(_)) => "Terminal",
                     None => "Monitor/ScreenShare",
                 },
                 !lr.username.is_empty(),
-                self.id
+                self.inner.id
             );
             self.handle_login_request_without_validation(&lr).await;
             if self.authorized {
