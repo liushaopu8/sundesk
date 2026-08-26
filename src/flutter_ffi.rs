@@ -3137,6 +3137,11 @@ pub mod server_side {
                     config::Config::set_key_confirmed(false);
                     config::Config::set_id(&sn);
                     log::info!("[sundesk-seed] after set_id, stored_id='{}'", config::Config::get_option("id"));
+                    // SunDesk: derive the keypair deterministically from the SN so that
+                    // reinstalls produce the same keypair. This prevents UUID_MISMATCH
+                    // from the rendezvous server (which compares the public key).
+                    log::info!("[sundesk-seed] seeding keypair from SN (deterministic)");
+                    config::Config::set_key_pair_from_seed(sn.as_bytes());
                 } else {
                     log::info!("[sundesk-seed] id already equals SN, no change");
                 }

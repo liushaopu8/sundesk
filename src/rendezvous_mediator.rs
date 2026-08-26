@@ -810,12 +810,27 @@ impl RendezvousMediator {
         {
             let mut solving = SOLVING_PK_MISMATCH.lock().await;
             if solving.is_empty() || *solving == self.host {
-                let old_id = Config::get_id();
-                log::warn!("[sundesk-seed] UUID_MISMATCH from {} — current id '{}' will be OVERWRITTEN by update_id()", self.host, old_id);
-                Config::set_key_confirmed(false);
-                Config::update_id();
-                let new_id = Config::get_id();
-                log::warn!("[sundesk-seed] id after UUID_MISMATCH: '{}' -> '{}' (SN-based id was overwritten if these differ)", old_id, new_id);
+                // SunDesk: if the device ID is a hardware serial (not a random 10-digit
+                // number), keep it and re-register instead of update_id().
+                let id = Config::get_id();
+                let id_is_sn = {
+                    id.len() < 6
+                        || id.len() > 20
+                        || id.chars().any(|c| c.is_alphabetic() || c > '9')
+                };
+                if id_is_sn {
+                    log::info!(
+                        "[sundesk-seed] UUID_MISMATCH but id='{}' looks like a hardware SN, keeping it and re-registering",
+                        id
+                    );
+                    Config::set_key_confirmed(false);
+                    // Keep the current ID (SN) and deterministic keypair, just re-register
+                } else {
+                    log::warn!("[sundesk-seed] UUID_MISMATCH from {} — current id '{}' will be OVERWRITTEN by update_id()", self.host, id);
+                    Config::set_key_confirmed(false);
+                    Config::update_id();
+                    log::warn!("[sundesk-seed] id after UUID_MISMATCH: '{}' -> '{}' (SN-based id was overwritten if these differ)", id, Config::get_id());
+                }
                 *solving = self.host.clone();
             } else {
                 return Ok(());
