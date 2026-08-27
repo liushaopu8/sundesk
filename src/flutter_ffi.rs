@@ -3142,6 +3142,9 @@ pub mod server_side {
                     // from the rendezvous server (which compares the public key).
                     log::info!("[sundesk-seed] seeding keypair from SN (deterministic)");
                     config::Config::set_key_pair_from_seed(sn.as_bytes());
+                    // SunDesk: also derive the rendezvous uuid from the SN so it is
+                    // stable across reinstalls and independent of the (rotatable) pk.
+                    config::Config::set_uuid_from_seed(sn.as_bytes());
                 } else {
                     log::info!("[sundesk-seed] id already equals SN, no change");
                 }
