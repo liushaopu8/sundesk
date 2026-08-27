@@ -2610,6 +2610,8 @@ impl Connection {
                     Some(login_request::Union::ViewCamera(_)) => "ViewCamera",
                     Some(login_request::Union::Terminal(_)) => "Terminal",
                     None => "Monitor/ScreenShare",
+                    // prost marks oneof unions as non_exhaustive
+                    _ => "Other",
                 },
                 !lr.username.is_empty(),
                 self.inner.id
