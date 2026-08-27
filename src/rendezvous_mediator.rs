@@ -376,7 +376,7 @@ impl RendezvousMediator {
                         notify_android_needs_deploy();
                     }
                     _ => {
-                        log::error!("unknown RegisterPkResponse");
+                        log::error!("unknown RegisterPkResponse: result={:?}", rpr.result);
                     }
                 }
                 if rpr.keep_alive > 0 {
@@ -820,11 +820,11 @@ impl RendezvousMediator {
                 };
                 if id_is_sn {
                     log::info!(
-                        "[sundesk-seed] UUID_MISMATCH but id='{}' looks like a hardware SN, keeping it and re-registering",
+                        "[sundesk-seed] UUID_MISMATCH but id='{}' looks like a hardware SN, keeping ID and generating fresh keypair",
                         id
                     );
                     Config::set_key_confirmed(false);
-                    // Keep the current ID (SN) and deterministic keypair, just re-register
+                    Config::update_key_pair();
                 } else {
                     log::warn!("[sundesk-seed] UUID_MISMATCH from {} — current id '{}' will be OVERWRITTEN by update_id()", self.host, id);
                     Config::set_key_confirmed(false);
