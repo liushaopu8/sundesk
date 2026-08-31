@@ -134,32 +134,20 @@ Future<void> initEnv(String appType) async {
   updateSystemWindowTheme();
 }
 
-Future<void> runMainApp(bool startService) async {
-  debugPrint('startup: runMainApp begin (startService=$startService)');
+void runMainApp(bool startService) async {
   // register uni links
   await initEnv(kAppTypeMain);
-  debugPrint('startup: initEnv done');
   checkUpdate();
   // trigger connection status updater
-  debugPrint('startup: mainCheckConnectStatus begin');
   await bind.mainCheckConnectStatus();
-  debugPrint('startup: mainCheckConnectStatus done');
   if (startService) {
-    debugPrint('startup: startService begin');
     gFFI.serverModel.startService();
     bind.pluginSyncUi(syncTo: kAppTypeMain);
     bind.pluginListReload();
-    debugPrint('startup: startService done');
   }
-  debugPrint('startup: loadCache begin');
   await Future.wait([gFFI.abModel.loadCache(), gFFI.groupModel.loadCache()]);
-  debugPrint('startup: loadCache done');
-  debugPrint('startup: refreshCurrentUser begin');
   gFFI.userModel.refreshCurrentUser();
-  debugPrint('startup: refreshCurrentUser returned');
-  debugPrint('startup: runApp begin');
   runApp(App());
-  debugPrint('startup: runApp returned');
 
   bool? alwaysOnTop;
   if (isDesktop) {
