@@ -285,8 +285,15 @@ jobs:
         if: env.ANDROID_SIGNING_KEY != null && env.UPLOAD_ARTIFACT == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: sundesk-${{ env.VERSION }}-arm64.apk
+          name: sundesk-${{ env.VERSION }}-arm64-signed-run-${{ github.run_id }}.apk
           path: ${{steps.sign-sundesk.outputs.signedReleaseFile}}
+
+      - name: Upload unsigned APK artifact
+        if: env.ANDROID_SIGNING_KEY == null && env.UPLOAD_ARTIFACT == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sundesk-${{ env.VERSION }}-arm64-unsigned-run-${{ github.run_id }}.apk
+          path: signed-apk/sundesk-${{ env.VERSION }}-arm64.apk
 
       - name: Publish signed apk package
         if: env.ANDROID_SIGNING_KEY != null && env.UPLOAD_ARTIFACT == 'true'
