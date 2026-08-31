@@ -192,16 +192,22 @@ Future<void> runMainApp(bool startService) async {
 }
 
 void runMobileApp() async {
+  debugPrint('BOOT-MOBILE: runMobileApp entered');
   await initEnv(kAppTypeMain);
+  debugPrint('BOOT-MOBILE: initEnv done');
   checkUpdate();
   if (isAndroid) androidChannelInit();
   if (isAndroid) platformFFI.syncAndroidServiceAppDirConfigPath();
   // Apply TMS-pushed server config, fire-and-forget to avoid slowing down startup.
   if (isAndroid) applyTmsConfig();
   draggablePositions.load();
+  debugPrint('BOOT-MOBILE: loadCache begin');
   await Future.wait([gFFI.abModel.loadCache(), gFFI.groupModel.loadCache()]);
+  debugPrint('BOOT-MOBILE: loadCache done');
   gFFI.userModel.refreshCurrentUser();
+  debugPrint('BOOT-MOBILE: runApp begin');
   runApp(App());
+  debugPrint('BOOT-MOBILE: runApp returned');
   await initUniLinks();
 }
 
