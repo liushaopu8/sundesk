@@ -65,7 +65,7 @@ class _ServerPageState extends State<ServerPage> {
   @override
   void initState() {
     super.initState();
-    _updateTimer = periodic_immediate(const Duration(seconds: 3), () async {
+    debugPrint('BOOT-DIAG: ServerPage.initState'); = periodic_immediate(const Duration(seconds: 3), () async {
       await gFFI.serverModel.fetchID();
       await gFFI.serverModel.fetchDeviceSn();
     });
@@ -95,7 +95,9 @@ class _ServerPageState extends State<ServerPage> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('BOOT-DIAG: ServerPage.build before checkService');
     checkService();
+    debugPrint('BOOT-DIAG: ServerPage.build after checkService');
     return ChangeNotifierProvider.value(
         value: gFFI.serverModel,
         child: Consumer<ServerModel>(
@@ -132,7 +134,9 @@ class _ServerPageState extends State<ServerPage> {
 }
 
 void checkService() async {
+  debugPrint('BOOT-DIAG: checkService before invokeMethod');
   gFFI.invokeMethod("check_service");
+  debugPrint('BOOT-DIAG: checkService after invokeMethod');
   // for Android 10/11, request MANAGE_EXTERNAL_STORAGE permission from system setting page
   if (AndroidPermissionManager.isWaitingFile() && !gFFI.serverModel.fileOk) {
     AndroidPermissionManager.complete(kManageExternalStorage,
@@ -146,8 +150,8 @@ class SunDeskStatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('BOOT-DIAG: SunDeskStatusCard.build begin');
     final serverModel = Provider.of<ServerModel>(context);
-    const double iconMarginRight = 15;
     const double iconSize = 24;
     const TextStyle textStyleHeading = TextStyle(
         fontSize: 16.0, fontWeight: FontWeight.bold, color: Colors.grey);
@@ -545,9 +549,8 @@ class ConnectionManager extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('BOOT-DIAG: ConnectionManager.build begin');
     final serverModel = Provider.of<ServerModel>(context);
-    return Column(
-        children: serverModel.clients
             .map((client) => PaddingCard(
                 title: translate(
                     client.isFileTransfer ? "Transfer file" : "Share screen"),

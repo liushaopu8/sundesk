@@ -207,15 +207,19 @@ class MainActivity : FlutterActivity() {
                     }
                 }
                 "check_service" -> {
+                    Log.i(logTag, "BOOT-DIAG: check_service begin")
                     Companion.flutterMethodChannel?.invokeMethod(
                         "on_state_changed",
                         mapOf("name" to "input", "value" to InputService.isOpen.toString())
                     )
+                    Log.i(logTag, "BOOT-DIAG: check_service input callback sent")
                     Companion.flutterMethodChannel?.invokeMethod(
                         "on_state_changed",
                         mapOf("name" to "media", "value" to MainService.isReady.toString())
                     )
+                    Log.i(logTag, "BOOT-DIAG: check_service media callback sent")
                     result.success(true)
+                    Log.i(logTag, "BOOT-DIAG: check_service end")
                 }
                 "stop_input" -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
