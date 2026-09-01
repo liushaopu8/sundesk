@@ -43,6 +43,15 @@ Future<void> main(List<String> args) async {
   earlyAssert();
   WidgetsFlutterBinding.ensureInitialized();
 
+  FlutterError.onError = (details) {
+    debugPrint('BOOT-DIAG: FlutterError: ${details.exception}');
+    debugPrint('BOOT-DIAG: FlutterError stack: ${details.stack}');
+    FlutterError.presentError(details);
+  };
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    debugPrint('BOOT-DIAG: first Flutter frame rendered');
+  });
+
   debugPrint("launch args: $args");
   kBootArgs = List.from(args);
 
@@ -453,6 +462,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    debugPrint('BOOT-DIAG: App.initState');
     WidgetsBinding.instance.window.onPlatformBrightnessChanged = () {
       final userPreference = MyTheme.getThemeModePreference();
       if (userPreference != ThemeMode.system) return;
@@ -505,9 +515,11 @@ class _AppState extends State<App> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('BOOT-DIAG: App.build begin');
     // final analytics = FirebaseAnalytics.instance;
     final botToastBuilder = BotToastInit();
     return RefreshWrapper(builder: (context) {
+      debugPrint('BOOT-DIAG: App RefreshWrapper builder');
       return MultiProvider(
         providers: [
           // global configuration

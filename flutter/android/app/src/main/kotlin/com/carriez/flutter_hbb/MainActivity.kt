@@ -52,7 +52,9 @@ class MainActivity : FlutterActivity() {
     private val audioRecordHandle = AudioRecordHandle(this, { false }, { isAudioStart })
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        Log.i(logTag, "BOOT-DIAG: configureFlutterEngine begin")
         super.configureFlutterEngine(flutterEngine)
+        Log.i(logTag, "BOOT-DIAG: configureFlutterEngine after super MainService.isReady=${MainService.isReady}")
         if (MainService.isReady) {
             Intent(activity, MainService::class.java).also {
                 bindService(it, serviceConnection, Context.BIND_AUTO_CREATE)
@@ -70,10 +72,12 @@ class MainActivity : FlutterActivity() {
                 Log.e("MainActivity", "Failed to setCodecInfo: ${e.message}", e)
             }
         }
+        Log.i(logTag, "BOOT-DIAG: configureFlutterEngine end")
     }
 
     override fun onResume() {
         super.onResume()
+        Log.i(logTag, "BOOT-DIAG: MainActivity.onResume channelReady=${flutterMethodChannel != null}")
         val inputPer = InputService.isOpen
         activity.runOnUiThread {
             flutterMethodChannel?.invokeMethod(
@@ -92,13 +96,16 @@ class MainActivity : FlutterActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        Log.i(logTag, "BOOT-DIAG: onActivityResult requestCode=$requestCode resultCode=$resultCode")
         if (requestCode == REQ_INVOKE_PERMISSION_ACTIVITY_MEDIA_PROJECTION && resultCode == RES_FAILED) {
             flutterMethodChannel?.invokeMethod("on_media_projection_canceled", null)
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        Log.i(logTag, "BOOT-DIAG: MainActivity.onCreate begin")
         super.onCreate(savedInstanceState)
+        Log.i(logTag, "BOOT-DIAG: MainActivity.onCreate after super")
         if (_rdClipboardManager == null) {
             _rdClipboardManager = RdClipboardManager(getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
             FFI.setClipboardManager(_rdClipboardManager!!)
@@ -141,6 +148,7 @@ class MainActivity : FlutterActivity() {
             // make sure result will be invoked, otherwise flutter will await forever
             when (call.method) {
                 "init_service" -> {
+                    Log.i(logTag, "BOOT-DIAG: init_service method call")
                     Intent(activity, MainService::class.java).also {
                         bindService(it, serviceConnection, Context.BIND_AUTO_CREATE)
                     }
@@ -152,6 +160,7 @@ class MainActivity : FlutterActivity() {
                     result.success(true)
                 }
                 "start_capture" -> {
+                    Log.i(logTag, "BOOT-DIAG: start_capture method call service=${mainService != null}")
                     mainService?.let {
                         result.success(it.startCapture())
                     } ?: let {

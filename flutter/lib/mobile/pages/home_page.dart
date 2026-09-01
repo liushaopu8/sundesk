@@ -47,6 +47,7 @@ class HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    debugPrint('BOOT-DIAG: HomePage.initState');
     initPages();
   }
 
@@ -57,6 +58,7 @@ class HomePageState extends State<HomePage> {
   }
 
   void initPages() {
+    debugPrint('BOOT-DIAG: HomePage.initPages begin isAndroid=$isAndroid isWeb=$isWeb');
     _pages.clear();
     if (isAndroid) {
       // SunDesk: only Share screen (default) + Chat. Settings entered via
@@ -76,10 +78,12 @@ class HomePageState extends State<HomePage> {
       }
       _pages.add(SettingsPage());
     }
+    debugPrint('BOOT-DIAG: HomePage.initPages done pageCount=${_pages.length} chatIndex=$_chatPageTabIndex');
   }
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('BOOT-DIAG: HomePage.build begin selectedIndex=$_selectedIndex pageCount=${_pages.length}');
     return WillPopScope(
         onWillPop: () async {
           if (_selectedIndex != 0) {

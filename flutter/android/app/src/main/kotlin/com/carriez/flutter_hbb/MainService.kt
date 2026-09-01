@@ -229,9 +229,11 @@ class MainService : Service() {
     private lateinit var notificationBuilder: NotificationCompat.Builder
 
     override fun onCreate() {
+        Log.i(logTag, "BOOT-DIAG: MainService.onCreate begin")
         super.onCreate()
         Log.d(logTag,"MainService onCreate, sdk int:${Build.VERSION.SDK_INT} reuseVirtualDisplay:$reuseVirtualDisplay")
         FFI.init(this)
+        Log.i(logTag, "BOOT-DIAG: MainService FFI.init returned")
         HandlerThread("Service", Process.THREAD_PRIORITY_BACKGROUND).apply {
             start()
             serviceLooper = looper
@@ -247,7 +249,9 @@ class MainService : Service() {
         // from the SN, making devices reachable by SN instead of a random ID.
         val sn = getDeviceSn(applicationContext)
         Log.i(logTag, "[sundesk-seed] MainService.onCreate configPath='$configPath' (len=${configPath.length}), sn='$sn'")
+        Log.i(logTag, "BOOT-DIAG: MainService calling FFI.startServer")
         FFI.startServer(configPath, "", sn)
+        Log.i(logTag, "BOOT-DIAG: MainService FFI.startServer returned")
 
         createForegroundNotification()
     }
