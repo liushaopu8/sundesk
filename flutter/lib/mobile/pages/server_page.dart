@@ -65,7 +65,8 @@ class _ServerPageState extends State<ServerPage> {
   @override
   void initState() {
     super.initState();
-    debugPrint('BOOT-DIAG: ServerPage.initState'); = periodic_immediate(const Duration(seconds: 3), () async {
+    debugPrint('BOOT-DIAG: ServerPage.initState');
+    _updateTimer = periodic_immediate(const Duration(seconds: 3), () async {
       await gFFI.serverModel.fetchID();
       await gFFI.serverModel.fetchDeviceSn();
     });
@@ -152,6 +153,7 @@ class SunDeskStatusCard extends StatelessWidget {
   Widget build(BuildContext context) {
     debugPrint('BOOT-DIAG: SunDeskStatusCard.build begin');
     final serverModel = Provider.of<ServerModel>(context);
+    const double iconMarginRight = 15;
     const double iconSize = 24;
     const TextStyle textStyleHeading = TextStyle(
         fontSize: 16.0, fontWeight: FontWeight.bold, color: Colors.grey);
@@ -551,6 +553,8 @@ class ConnectionManager extends StatelessWidget {
   Widget build(BuildContext context) {
     debugPrint('BOOT-DIAG: ConnectionManager.build begin');
     final serverModel = Provider.of<ServerModel>(context);
+    return Column(
+        children: serverModel.clients
             .map((client) => PaddingCard(
                 title: translate(
                     client.isFileTransfer ? "Transfer file" : "Share screen"),
