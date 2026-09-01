@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
+      - uuid-pk-differ
     paths-ignore:
       - ".github/**"
       - "docs/**"
