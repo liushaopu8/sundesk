@@ -476,6 +476,11 @@ impl Connection {
         let _raii_control_permissions_id =
             raii::ControlPermissionsID::new(id, &control_permissions);
         let salt = Config::get_effective_permanent_password_salt();
+        log::warn!(
+            "[sundesk-pwdiag] Connection::start: salt_sent_to_client_len={} salt_sent_to_client_fp={}",
+            salt.len(),
+            Config::diag_fp(salt.as_bytes())
+        );
         let hash = Hash {
             salt,
             challenge: Config::get_auto_password(6),
@@ -2311,6 +2316,16 @@ impl Connection {
         hasher.update(password.as_bytes());
         hasher.update(self.hash.salt.as_bytes());
         let h1_plain = hasher.finalize();
+        // [sundesk-pwdiag] The salt used here is the one sent to the client in Hash.
+        // If this salt_fp differs from the salt_fp used in set_permanent_password,
+        // client/server hash mismatches even with the right password.
+        log::warn!(
+            "[sundesk-pwdiag] validate_password_plain: salt_fp={} salt_len={} pwd_len={} h1_fp={}",
+            Config::diag_fp(self.hash.salt.as_bytes()),
+            self.hash.salt.len(),
+            password.len(),
+            Config::diag_fp(&h1_plain[..])
+        );
         self.verify_h1(&h1_plain[..])
     }
 
@@ -2322,10 +2337,9 @@ impl Connection {
         // Use strict decode success to detect hashed storage.
         // If decode fails, treat as legacy plaintext storage for compatibility.
         if let Some(h1) = decode_permanent_password_h1_from_storage(storage) {
-            let fp = |b: &[u8]| b.iter().take(4).map(|x| format!("{:02x}", x)).collect::<Vec<_>>().join("");
             log::warn!(
                 "[sundesk-pwdiag] validate_password_storage: decoded h1_fp={} storage_prefix={}",
-                fp(&h1[..]),
+                Config::diag_fp(&h1[..]),
                 storage.chars().take(2).collect::<String>()
             );
             return self.verify_h1(&h1[..]);
@@ -2448,6 +2462,14 @@ impl Connection {
             // cannot fall back to being accepted as legacy plaintext.
             let (local_storage, local_salt) =
                 Config::get_local_permanent_password_storage_and_salt();
+            log::warn!(
+                "[sundesk-pwdiag] validate_password local storage: present={} usable={} stored_salt_len={} stored_salt_fp={} pk_fp={}",
+                !local_storage.is_empty(),
+                local_permanent_password_storage_is_usable_for_auth(&local_storage, &local_salt),
+                local_salt.len(),
+                Config::diag_fp(local_salt.as_bytes()),
+                Config::diag_fp(&hbb_common::get_uuid())
+            );
             if !local_storage.is_empty() {
                 let local_usable = local_permanent_password_storage_is_usable_for_auth(
                     &local_storage,
