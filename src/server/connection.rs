@@ -2279,7 +2279,27 @@ impl Connection {
         // bytes matched via timing. In typical remote scenarios this is difficult to exploit due to network
         // jitter, changing challenges, and login attempt throttling, but a constant-time comparison here is
         // low-cost defensive programming.
-        constant_time_eq(&hasher2.finalize()[..], &self.lr.password[..])
+        let expected = hasher2.finalize();
+        let received = &self.lr.password;
+        let ok = constant_time_eq(&expected[..], received[..]);
+        // [sundesk-pwdiag] Print fingerprints of expected vs received h2 so we can see
+        // if the client used a different salt/challenge/password. We never log the
+        // actual challenge, h1, or the received password bytes.
+        let fp = |b: &[u8]| {
+            b.iter()
+                .take(4)
+                .map(|x| format!("{:02x}", x))
+                .collect::<Vec<_>>()
+                .join("")
+        };
+        log::warn!(
+            "[sundesk-pwdiag] verify_h1: expected_h2_fp={} received_h2_fp={} h1_fp={} ok={}",
+            fp(&expected[..]),
+            fp(received[..].as_ref()),
+            fp(h1),
+            ok
+        );
+        ok
     }
 
     fn validate_password_plain(&self, password: &str) -> bool {
@@ -2302,10 +2322,17 @@ impl Connection {
         // Use strict decode success to detect hashed storage.
         // If decode fails, treat as legacy plaintext storage for compatibility.
         if let Some(h1) = decode_permanent_password_h1_from_storage(storage) {
+            let fp = |b: &[u8]| b.iter().take(4).map(|x| format!("{:02x}", x)).collect::<Vec<_>>().join("");
+            log::warn!(
+                "[sundesk-pwdiag] validate_password_storage: decoded h1_fp={} storage_prefix={}",
+                fp(&h1[..]),
+                storage.chars().take(2).collect::<String>()
+            );
             return self.verify_h1(&h1[..]);
         }
 
         // Legacy plaintext storage path.
+        log::warn!("[sundesk-pwdiag] validate_password_storage: treating as legacy plaintext");
         self.validate_password_plain(storage)
     }
 
@@ -2372,6 +2399,32 @@ impl Connection {
     }
 
     fn validate_password(&mut self, allow_permanent_password: bool) -> bool {
+        // [sundesk-pwdiag] Snapshot the auth state for THIS login attempt. Correlate
+        // pk_fp with the set_permanent_password / set_key_pair_from_seed logs: if the
+        // storage was encrypted with a different pk_fp, local storage decrypt fails and
+        // the password is rejected even though the client sent the right password.
+        {
+            let (local_storage, local_salt) =
+                Config::get_local_permanent_password_storage_and_salt();
+            let local_present = !local_storage.is_empty();
+            let local_usable = local_present
+                && local_permanent_password_storage_is_usable_for_auth(
+                    &local_storage,
+                    &local_salt,
+                );
+            log::warn!(
+                "[sundesk-pwdiag] validate_password ENTER: approve_mode={:?} temp_enabled={} perm_enabled={} allow_perm_fallback={} local_pw_present={} local_pw_usable={} stored_salt_len={} hash_salt_sent_to_client_len={} pk_fp={}",
+                password::approve_mode(),
+                password::temporary_enabled(),
+                password::permanent_enabled(),
+                allow_permanent_password,
+                local_present,
+                local_usable,
+                local_salt.len(),
+                self.hash.salt.len(),
+                Config::diag_fp(&hbb_common::get_uuid())
+            );
+        }
         if password::temporary_enabled() {
             let password = password::temporary_password();
             if self.validate_password_plain(&password) {
@@ -2396,9 +2449,21 @@ impl Connection {
             let (local_storage, local_salt) =
                 Config::get_local_permanent_password_storage_and_salt();
             if !local_storage.is_empty() {
-                if local_permanent_password_storage_is_usable_for_auth(&local_storage, &local_salt)
-                    && self.validate_password_storage(&local_storage)
-                {
+                let local_usable = local_permanent_password_storage_is_usable_for_auth(
+                    &local_storage,
+                    &local_salt,
+                );
+                if !local_usable {
+                    // [sundesk-pwdiag] Storage exists but cannot be decrypted with the
+                    // current keypair -> permanent password silently rejected. This is the
+                    // signature of encrypt-before-SN-seeding.
+                    log::error!(
+                        "[sundesk-pwdiag] local permanent-password storage present but NOT usable (cannot decrypt with pk_fp={}, stored_salt_len={}) — rejecting login; password must be re-set after keypair stable",
+                        Config::diag_fp(&hbb_common::get_uuid()),
+                        local_salt.len()
+                    );
+                }
+                if local_usable && self.validate_password_storage(&local_storage) {
                     self.set_conn_audit_primary_auth(ConnAuditPrimaryAuth::PermanentPassword);
                     print_fallback();
                     return true;
