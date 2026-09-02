@@ -2281,7 +2281,7 @@ impl Connection {
         // low-cost defensive programming.
         let expected = hasher2.finalize();
         let received = &self.lr.password;
-        let ok = constant_time_eq(&expected[..], received[..]);
+        let ok = constant_time_eq(&expected[..], &received[..]);
         // [sundesk-pwdiag] Print fingerprints of expected vs received h2 so we can see
         // if the client used a different salt/challenge/password. We never log the
         // actual challenge, h1, or the received password bytes.
@@ -2295,7 +2295,7 @@ impl Connection {
         log::warn!(
             "[sundesk-pwdiag] verify_h1: expected_h2_fp={} received_h2_fp={} h1_fp={} ok={}",
             fp(&expected[..]),
-            fp(received[..].as_ref()),
+            fp(&self.lr.password[..]),
             fp(h1),
             ok
         );
