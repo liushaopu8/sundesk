@@ -477,7 +477,7 @@ impl Connection {
             raii::ControlPermissionsID::new(id, &control_permissions);
         let salt = Config::get_effective_permanent_password_salt();
         log::warn!(
-            "[sundesk-pwdiag] Connection::start: salt_sent_to_client_len={} salt_sent_to_client_fp={}",
+            "[sundesk-pwdiag] connection.rs:Connection::start: salt_sent_to_client_len={} salt_sent_to_client_fp={}",
             salt.len(),
             Config::diag_fp(salt.as_bytes())
         );
@@ -2298,7 +2298,7 @@ impl Connection {
                 .join("")
         };
         log::warn!(
-            "[sundesk-pwdiag] verify_h1: expected_h2_fp={} received_h2_fp={} h1_fp={} ok={}",
+            "[sundesk-pwdiag] connection.rs:verify_h1: expected_h2_fp={} received_h2_fp={} h1_fp={} ok={}",
             fp(&expected[..]),
             fp(&self.lr.password[..]),
             fp(h1),
@@ -2320,7 +2320,7 @@ impl Connection {
         // If this salt_fp differs from the salt_fp used in set_permanent_password,
         // client/server hash mismatches even with the right password.
         log::warn!(
-            "[sundesk-pwdiag] validate_password_plain: salt_fp={} salt_len={} pwd_len={} h1_fp={}",
+            "[sundesk-pwdiag] connection.rs:validate_password_plain: salt_fp={} salt_len={} pwd_len={} h1_fp={}",
             Config::diag_fp(self.hash.salt.as_bytes()),
             self.hash.salt.len(),
             password.len(),
@@ -2338,7 +2338,7 @@ impl Connection {
         // If decode fails, treat as legacy plaintext storage for compatibility.
         if let Some(h1) = decode_permanent_password_h1_from_storage(storage) {
             log::warn!(
-                "[sundesk-pwdiag] validate_password_storage: decoded h1_fp={} storage_prefix={}",
+                "[sundesk-pwdiag] connection.rs:validate_password_storage: decoded h1_fp={} storage_prefix={}",
                 Config::diag_fp(&h1[..]),
                 storage.chars().take(2).collect::<String>()
             );
@@ -2346,7 +2346,7 @@ impl Connection {
         }
 
         // Legacy plaintext storage path.
-        log::warn!("[sundesk-pwdiag] validate_password_storage: treating as legacy plaintext");
+        log::warn!("[sundesk-pwdiag] connection.rs:validate_password_storage: treating as legacy plaintext");
         self.validate_password_plain(storage)
     }
 
@@ -2427,7 +2427,7 @@ impl Connection {
                     &local_salt,
                 );
             log::warn!(
-                "[sundesk-pwdiag] validate_password ENTER: approve_mode={:?} temp_enabled={} perm_enabled={} allow_perm_fallback={} local_pw_present={} local_pw_usable={} stored_salt_len={} hash_salt_sent_to_client_len={} pk_fp={}",
+                "[sundesk-pwdiag] connection.rs:validate_password ENTER: approve_mode={:?} temp_enabled={} perm_enabled={} allow_perm_fallback={} local_pw_present={} local_pw_usable={} stored_salt_len={} hash_salt_sent_to_client_len={} pk_fp={}",
                 password::approve_mode(),
                 password::temporary_enabled(),
                 password::permanent_enabled(),
@@ -2463,7 +2463,7 @@ impl Connection {
             let (local_storage, local_salt) =
                 Config::get_local_permanent_password_storage_and_salt();
             log::warn!(
-                "[sundesk-pwdiag] validate_password local storage: present={} usable={} stored_salt_len={} stored_salt_fp={} pk_fp={}",
+                "[sundesk-pwdiag] connection.rs:validate_password local storage: present={} usable={} stored_salt_len={} stored_salt_fp={} pk_fp={}",
                 !local_storage.is_empty(),
                 local_permanent_password_storage_is_usable_for_auth(&local_storage, &local_salt),
                 local_salt.len(),
@@ -2480,7 +2480,7 @@ impl Connection {
                     // current keypair -> permanent password silently rejected. This is the
                     // signature of encrypt-before-SN-seeding.
                     log::error!(
-                        "[sundesk-pwdiag] local permanent-password storage present but NOT usable (cannot decrypt with pk_fp={}, stored_salt_len={}) — rejecting login; password must be re-set after keypair stable",
+                        "[sundesk-pwdiag] connection.rs:validate_password local permanent-password storage present but NOT usable (cannot decrypt with pk_fp={}, stored_salt_len={}) — rejecting login; password must be re-set after keypair stable",
                         Config::diag_fp(&hbb_common::get_uuid()),
                         local_salt.len()
                     );
