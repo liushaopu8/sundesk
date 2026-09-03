@@ -19,12 +19,11 @@ env:
   VERSION: "3.12.1"
   NDK_VERSION: "r28c"
   VCPKG_COMMIT_ID: "120deac3062162151622ca4860575a33844ba10b"
-  TAG_NAME: "nightly"
   UPLOAD_ARTIFACT: "true"
   ANDROID_SIGNING_KEY: "${{ secrets.ANDROID_SIGNING_KEY }}"
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   generate-bridge:
@@ -308,27 +307,16 @@ jobs:
         env:
           BUILD_TOOLS_VERSION: ${{ env.ANDROID_SIGN_TOOL_VERSION }}
 
-      - name: Upload Artifacts
+      - name: Upload signed APK to Artifacts
         if: env.ANDROID_SIGNING_KEY != null && env.UPLOAD_ARTIFACT == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: sundesk-${{ env.VERSION }}-universal.apk
           path: ${{steps.sign-sundesk.outputs.signedReleaseFile}}
 
-      - name: Publish signed apk package
-        if: env.ANDROID_SIGNING_KEY != null && env.UPLOAD_ARTIFACT == 'true'
-        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
-        with:
-          prerelease: true
-          tag_name: ${{ env.TAG_NAME }}
-          files: |
-            ${{steps.sign-sundesk.outputs.signedReleaseFile}}
-
-      - name: Publish unsigned apk package
+      - name: Upload unsigned APK to Artifacts
         if: env.ANDROID_SIGNING_KEY == null && env.UPLOAD_ARTIFACT == 'true'
-        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          prerelease: true
-          tag_name: ${{ env.TAG_NAME }}
-          files: |
-            signed-apk/sundesk-${{ env.VERSION }}-universal.apk
+          name: sundesk-${{ env.VERSION }}-universal-unsigned.apk
+          path: signed-apk/sundesk-${{ env.VERSION }}-universal.apk
