@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
+      - fix/first-start-wrong-password
     paths-ignore:
       - ".github/**"
       - "docs/**"
