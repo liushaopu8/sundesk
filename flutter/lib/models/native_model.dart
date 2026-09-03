@@ -233,6 +233,23 @@ class PlatformFFI {
         appDir: _dir,
         customClientConfig: '',
       );
+      // SunDesk: seed the device identity (id + deterministic keypair) from
+      // the hardware SN BEFORE the service starts or the unattended password
+      // is written. On Android the password hash storage is encrypted with a
+      // key derived from the keypair; if the keypair is replaced later (by JNI
+      // startServer), the stored password can no longer be decrypted and the
+      // first unattended login fails with "Wrong Password".
+      if (isAndroid) {
+        try {
+          final sn = await getDeviceSn();
+          if (sn.isNotEmpty) {
+            final ok = await _ffiBind.mainSeedFromSn(sn: sn);
+            debugPrint('[sundesk-seed] mainSeedFromSn sn=$sn accepted=$ok');
+          }
+        } catch (e) {
+          debugPrintStack(label: 'seed from SN failed: $e');
+        }
+      }
     } catch (e) {
       debugPrintStack(label: 'initialize failed: $e');
     }

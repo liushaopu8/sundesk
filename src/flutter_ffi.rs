@@ -1805,6 +1805,17 @@ pub fn main_init(app_dir: String, custom_client_config: String) {
     log::info!("[sundesk-seed] main_init done, current stored id='{}'", config::Config::get_option("id"));
 }
 
+/// SunDesk: seed the device identity (id + deterministic keypair) from the
+/// hardware SN. Must be called by the Flutter app right after main_init,
+/// BEFORE the service is started or the unattended/permanent password is
+/// written — otherwise the password hash storage (encrypted with a key
+/// derived from the keypair) becomes undecryptable once the keypair is
+/// replaced, and the first unattended login fails with "Wrong Password".
+/// Returns true when the SN was accepted.
+pub fn main_seed_from_sn(sn: String) -> bool {
+    crate::common::seed_identity_from_sn(&sn)
+}
+
 pub fn main_device_id(id: String) {
     *crate::common::DEVICE_ID.lock().unwrap() = id;
 }
@@ -2148,7 +2159,7 @@ pub fn main_start_service() {
     #[cfg(target_os = "android")]
     {
         log::info!(
-            "[sundesk-seed] main_start_service called, current_id='{}' (NOTE: SN seeding only happens via JNI startServer)",
+            "[sundesk-seed] main_start_service called, current_id='{}' (SN seeding happens via main_seed_from_sn at app init, JNI startServer is fallback)",
             config::Config::get_option("id")
         );
         config::Config::set_option("stop-service".into(), "".into());
@@ -3117,37 +3128,14 @@ pub mod server_side {
                 crate::read_custom_client(&custom_client_config);
             }
         }
-        // SunDesk: seed the device ID from the hardware SN so devices are
+        // SunDesk: seed the device identity from the hardware SN so devices are
         // reachable by SN instead of a random ID. Runs before start_server
         // below, so the SN is what gets registered with the rendezvous server.
+        // The Flutter side also seeds early (main_seed_from_sn); this JNI call
+        // remains as the fallback for early service starts (e.g. boot receiver).
         if let Ok(sn) = env.get_string(&sn) {
             let sn: String = sn.into();
-            let cur = config::Config::get_option("id");
-            let valid = crate::common::is_valid_untrusted_peer_id(&sn);
-            log::info!(
-                "[sundesk-seed] startServer SN='{}' (len={}, valid={}), current_id='{}'",
-                sn,
-                sn.len(),
-                valid,
-                cur
-            );
-            if !sn.is_empty() && valid {
-                if cur != sn {
-                    log::info!("[sundesk-seed] device id changed: {cur} -> {sn}");
-                    config::Config::set_key_confirmed(false);
-                    config::Config::set_id(&sn);
-                    log::info!("[sundesk-seed] after set_id, stored_id='{}'", config::Config::get_option("id"));
-                    // SunDesk: derive the keypair deterministically from the SN so that
-                    // reinstalls produce the same keypair. This prevents UUID_MISMATCH
-                    // from the rendezvous server (which compares the public key).
-                    log::info!("[sundesk-seed] seeding keypair from SN (deterministic)");
-                    config::Config::set_key_pair_from_seed(sn.as_bytes());
-                } else {
-                    log::info!("[sundesk-seed] id already equals SN, no change");
-                }
-            } else {
-                log::warn!("[sundesk-seed] SN empty or invalid, keeping current_id='{}'", cur);
-            }
+            crate::common::seed_identity_from_sn(&sn);
         } else {
             log::warn!("[sundesk-seed] failed to read SN JString from JNI");
         }

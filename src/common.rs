@@ -2637,6 +2637,53 @@ pub fn is_valid_untrusted_peer_id(id: &str) -> bool {
         })
 }
 
+/// SunDesk: seed the device identity (id + deterministic keypair) from the
+/// hardware SN.
+///
+/// This MUST run before any permanent-password write: on Android the password
+/// hash storage is encrypted with a key derived from the device keypair
+/// (`get_uuid()` -> pk). If the keypair is replaced later (e.g. by JNI
+/// startServer seeding), the already-encrypted password storage can no longer
+/// be decrypted and the first unattended login fails with "Wrong Password"
+/// until the password is rewritten.
+///
+/// Idempotent: when the stored id already equals the SN it is a no-op.
+/// Returns true when the SN was accepted (seeded or already in place).
+pub fn seed_identity_from_sn(sn: &str) -> bool {
+    let cur = config::Config::get_option("id");
+    let valid = is_valid_untrusted_peer_id(sn);
+    log::info!(
+        "[sundesk-seed] seed_identity_from_sn SN='{}' (len={}, valid={}), current_id='{}'",
+        sn,
+        sn.len(),
+        valid,
+        cur
+    );
+    if sn.is_empty() || !valid {
+        log::warn!(
+            "[sundesk-seed] seed_identity_from_sn: SN empty or invalid, keeping current_id='{}'",
+            cur
+        );
+        return false;
+    }
+    if cur == sn {
+        log::info!("[sundesk-seed] id already equals SN, no change");
+        return true;
+    }
+    log::info!("[sundesk-seed] device id changed: {cur} -> {sn}");
+    config::Config::set_key_confirmed(false);
+    config::Config::set_id(sn);
+    log::info!(
+        "[sundesk-seed] after set_id, stored_id='{}'",
+        config::Config::get_option("id")
+    );
+    // Derive the keypair deterministically from the SN so reinstalls produce
+    // the same keypair and the rendezvous server never sees UUID_MISMATCH.
+    log::info!("[sundesk-seed] seeding keypair from SN (deterministic)");
+    config::Config::set_key_pair_from_seed(sn.as_bytes());
+    true
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

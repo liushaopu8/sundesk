@@ -1347,6 +1347,10 @@ class RustdeskImpl {
     throw UnimplementedError("mainSetPermanentPasswordWithResult");
   }
 
+  Future<bool> mainSeedFromSn({required String sn, dynamic hint}) {
+    throw UnimplementedError("mainSeedFromSn");
+  }
+
   Future<bool> mainCheckSuperUserPermission({dynamic hint}) {
     throw UnimplementedError("mainCheckSuperUserPermission");
   }
