@@ -56,6 +56,7 @@ Future<void> applyTmsConfig() async {
           key: kOptionTmsSettingsSecret, value: settingsSecret);
       await bind.mainSetOption(key: 'settings-secret', value: settingsSecret);
     }
+    debugPrint('applyTmsConfig: host = ${idServer}');
   } catch (e) {
     debugPrint('applyTmsConfig failed: $e');
   }
