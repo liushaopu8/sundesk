@@ -180,6 +180,7 @@ fun getDeviceSn(context: Context): String {
                 @Suppress("DEPRECATION")
                 Build.SERIAL
             }
+            Log.i("main", "Build.SERIAL: $sn")
         } catch (e: Exception) {
             Log.w("main", "Build.getSerial failed: ${e.message}")
         }
@@ -189,7 +190,7 @@ fun getDeviceSn(context: Context): String {
             context.contentResolver,
             Settings.Secure.ANDROID_ID
         ) ?: "unknown"
+        Log.i("main", "Settings.Secure.ANDROID_ID: $sn")
     }
-    Log.i("main", "Device SN result: $sn")
     return sn
 }
