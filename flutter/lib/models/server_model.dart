@@ -392,7 +392,13 @@ class ServerModel with ChangeNotifier {
     return res;
   }
 
+  /// SunDesk: on i80 the overlay permission page is inaccessible, so report
+  /// success without requesting anything (floating window stays unavailable).
   Future<bool> checkFloatingWindowPermission() async {
+    if (isI80Device) {
+      debugPrint("i80 device: skip SYSTEM_ALERT_WINDOW request");
+      return true;
+    }
     debugPrint("androidVersion $androidVersion");
     if (androidVersion < 23) {
       return false;
@@ -433,7 +439,11 @@ class ServerModel with ChangeNotifier {
       }
     } else {
       await checkRequestNotificationPermission();
-      if (bind.mainGetLocalOption(key: kOptionDisableFloatingWindow) != 'Y') {
+      // SunDesk: i80 POS terminals hide the "Display over other apps" settings
+      // page, so never request overlay permission there; other devices keep
+      // the original floating-window behavior.
+      if (!isI80Device &&
+          bind.mainGetLocalOption(key: kOptionDisableFloatingWindow) != 'Y') {
         await checkFloatingWindowPermission();
       }
       if (!await AndroidPermissionManager.check(kManageExternalStorage)) {
@@ -821,7 +831,10 @@ class ServerModel with ChangeNotifier {
 
   void androidUpdatekeepScreenOn() async {
     if (!isAndroid) return;
-    var floatingWindowDisabled =
+    // SunDesk: i80 has no accessible overlay permission -> floating window
+    // is always treated as disabled there; other devices follow the
+    // permission state as before.
+    var floatingWindowDisabled = isI80Device ||
         bind.mainGetLocalOption(key: kOptionDisableFloatingWindow) == "Y" ||
             !await AndroidPermissionManager.check(kSystemAlertWindow);
     final keepScreenOn = floatingWindowDisabled

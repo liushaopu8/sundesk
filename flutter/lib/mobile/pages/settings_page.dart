@@ -191,7 +191,9 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
         _checkUpdateOnStartup = checkUpdateOnStartup;
       }
 
-      var floatingWindowDisabled =
+      // SunDesk: i80 has no accessible overlay settings -> floating window
+      // always disabled there; other devices follow permission + option.
+      var floatingWindowDisabled = isI80Device ||
           bind.mainGetLocalOption(key: kOptionDisableFloatingWindow) == "Y" ||
               !await AndroidPermissionManager.check(kSystemAlertWindow);
       if (floatingWindowDisabled != _floatingWindowDisabled) {
@@ -611,8 +613,10 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
               }
             }
 
-            // 2. request kSystemAlertWindow
-            if (!await AndroidPermissionManager.check(kSystemAlertWindow)) {
+            // 2. request kSystemAlertWindow (skipped on i80: the ROM hides
+            // the "Display over other apps" settings page)
+            if (!isI80Device &&
+                !await AndroidPermissionManager.check(kSystemAlertWindow)) {
               if (!await AndroidPermissionManager.request(kSystemAlertWindow)) {
                 return;
               }
@@ -659,7 +663,8 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
     );
 
     onFloatingWindowChanged(bool toValue) async {
-      if (toValue) {
+      // SunDesk: i80 cannot grant overlay permission; just persist the option.
+      if (toValue && !isI80Device) {
         if (!await AndroidPermissionManager.check(kSystemAlertWindow)) {
           if (!await AndroidPermissionManager.request(kSystemAlertWindow)) {
             return;
@@ -1036,11 +1041,14 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
   }
 
   Future<bool> canStartOnBoot() async {
-    // start on boot depends on ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS and SYSTEM_ALERT_WINDOW
+    // start on boot depends on ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS and
+    // SYSTEM_ALERT_WINDOW. SunDesk: i80 hides the overlay settings page, so
+    // overlay is not required there.
     if (_hasIgnoreBattery && !_ignoreBatteryOpt) {
       return false;
     }
-    if (!await AndroidPermissionManager.check(kSystemAlertWindow)) {
+    if (!isI80Device &&
+        !await AndroidPermissionManager.check(kSystemAlertWindow)) {
       return false;
     }
     return true;

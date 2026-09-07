@@ -27,8 +27,15 @@ class BootReceiver : BroadcastReceiver() {
                 return
             }
             // check pre-permission
-            if (!XXPermissions.isGranted(context, REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, SYSTEM_ALERT_WINDOW)){
+            // SunDesk: i80 POS terminals hide the "Display over other apps"
+            // settings page, so SYSTEM_ALERT_WINDOW is not required there.
+            val isI80 = Build.MODEL?.uppercase()?.contains("I80") == true
+            if (!isI80 && !XXPermissions.isGranted(context, REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, SYSTEM_ALERT_WINDOW)){
                 Log.d(logTag, "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS or SYSTEM_ALERT_WINDOW is not granted")
+                return
+            }
+            if (isI80 && !XXPermissions.isGranted(context, REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)){
+                Log.d(logTag, "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS is not granted (i80)")
                 return
             }
 

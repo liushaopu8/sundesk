@@ -64,6 +64,13 @@ final isWebOnMacOs = isWebOnMacOS_;
 var isMobile = isAndroid || isIOS;
 var version = '';
 int androidVersion = 0;
+// SunDesk: device model (Build.MODEL), used to tell i80 POS terminals apart.
+// i80 is a 32-bit POS device whose ROM hides the "Display over other apps"
+// settings page, so overlay permission can never be granted there; the
+// floating window is force-disabled on i80 and never requested.
+String androidModel = '';
+bool get isI80Device =>
+    isAndroid && androidModel.toUpperCase().contains('I80');
 
 // Only used on Linux.
 // `windowManager.setResizable(false)` will reset the window size to the default size on Linux.

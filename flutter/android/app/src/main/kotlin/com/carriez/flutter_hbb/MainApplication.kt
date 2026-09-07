@@ -2,6 +2,8 @@ package com.carriez.flutter_hbb
 
 import android.app.Application
 import android.util.Log
+import com.sunyard.exception.SDKException
+import com.sunyard.smartposapi.DeviceMaster
 import ffi.FFI
 
 class MainApplication : Application() {
@@ -13,5 +15,10 @@ class MainApplication : Application() {
         super.onCreate()
         Log.d(TAG, "App start")
         FFI.onAppStart(applicationContext)
+        try {
+            DeviceMaster.getInstance().init(this)
+        } catch (e: SDKException) {
+            throw RuntimeException(e)
+        }
     }
 }

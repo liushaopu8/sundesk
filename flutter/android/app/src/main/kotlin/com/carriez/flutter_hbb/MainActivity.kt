@@ -419,7 +419,12 @@ class MainActivity : FlutterActivity() {
     override fun onStop() {
         super.onStop()
         val disableFloatingWindow = FFI.getLocalOption("disable-floating-window") == "Y"
-        if (!disableFloatingWindow && MainService.isReady) {
+        // SunDesk: only start the floating window when the overlay permission
+        // is actually granted (i80 hides the overlay settings page -> skip).
+        val canDrawOverlays = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Settings.canDrawOverlays(this)
+        } else true
+        if (!disableFloatingWindow && canDrawOverlays && MainService.isReady) {
             startService(Intent(this, FloatingWindowService::class.java))
         }
     }

@@ -22,6 +22,8 @@ import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat.getSystemService
 import com.hjq.permissions.Permission
 import com.hjq.permissions.XXPermissions
+import com.sunyard.exception.SDKException
+import com.sunyard.smartposapi.terminal.TerminalManager
 import ffi.FFI
 import java.nio.ByteBuffer
 import java.util.*
@@ -161,17 +163,30 @@ fun getScreenSize(windowManager: WindowManager) : Pair<Int, Int>{
 // device ID from the SN so devices are reachable by SN instead of a random ID).
 fun getDeviceSn(context: Context): String {
     var sn = ""
+    
+    val model: String = Build.MODEL.toUpperCase(Locale.getDefault())
+    Log.i("DeviceUtils", "Build.MODEL = " + model)
+
+    if (model.contains("I80")) {
     try {
-        val clazz = Class.forName("android.os.SystemProperties")
-        val get = clazz.getMethod("get", String::class.java, String::class.java)
-        sn = (get.invoke(null, "ro.serialno", "") as String).trim()
-        if (sn.isEmpty()) {
-            sn = (get.invoke(null, "ro.boot.serialno", "") as String).trim()
+            sn = TerminalManager.getInstance().getProductCmd(TerminalManager.PRODUCT_SN)
+        } catch (e: SDKException) {
+            Log.w("main", "TerminalManager.PRODUCT_SN failed: " + e.getMessage())
         }
-        Log.i("main", "SystemProperties serialno: $sn")
-    } catch (e: Exception) {
-        Log.w("main", "SystemProperties reflection failed: ${e.message}")
+    } else {
+        try {
+            val clazz = Class.forName("android.os.SystemProperties")
+            val get = clazz.getMethod("get", String::class.java, String::class.java)
+            sn = (get.invoke(null, "ro.serialno", "") as String).trim()
+            if (sn.isEmpty()) {
+                sn = (get.invoke(null, "ro.boot.serialno", "") as String).trim()
+            }
+            Log.i("main", "SystemProperties serialno: $sn")
+        } catch (e: Exception) {
+            Log.w("main", "SystemProperties reflection failed: ${e.message}")
+        }
     }
+
     if (sn.isEmpty()) {
         try {
             sn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -185,6 +200,7 @@ fun getDeviceSn(context: Context): String {
             Log.w("main", "Build.getSerial failed: ${e.message}")
         }
     }
+
     if (sn.isEmpty() || sn == Build.UNKNOWN || sn == "unknown") {
         sn = Settings.Secure.getString(
             context.contentResolver,
@@ -192,5 +208,6 @@ fun getDeviceSn(context: Context): String {
         ) ?: "unknown"
         Log.i("main", "Settings.Secure.ANDROID_ID: $sn")
     }
+
     return sn
 }

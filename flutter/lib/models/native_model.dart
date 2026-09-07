@@ -191,6 +191,8 @@ class PlatformFFI {
         name = '${androidInfo.brand}-${androidInfo.model}';
         id = androidInfo.id.hashCode.toString();
         androidVersion = androidInfo.version.sdkInt;
+        // SunDesk: remember Build.MODEL for i80-specific behavior (overlay).
+        androidModel = androidInfo.model ?? '';
       } else if (isIOS) {
         IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
         name = iosInfo.utsname.machine;
