@@ -236,12 +236,20 @@ class SunDeskStatusCard extends StatelessWidget {
                 }
               }),
           statusRow(),
-          if (!serverModel.isStart)
+          // Show the start button both when the service is off and when it
+          // was switched on but failed to become ready (connectStatus == -1).
+          // In the failed case toggleService() would stop it, so retry via
+          // startService() directly; hide the button while connecting (0).
+          if (!serverModel.isStart || serverModel.connectStatus == -1)
             Center(
               child: ElevatedButton.icon(
                   icon: const Icon(Icons.play_arrow),
                   onPressed: () {
-                    if (!bind.isCustomClient() &&
+                    final failed =
+                        serverModel.isStart && serverModel.connectStatus == -1;
+                    if (failed) {
+                      serverModel.startService();
+                    } else if (!bind.isCustomClient() &&
                         gFFI.userModel.userName.value.isEmpty &&
                         bind.mainGetLocalOption(key: "show-scam-warning") !=
                             "N") {
