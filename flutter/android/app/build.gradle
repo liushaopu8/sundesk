@@ -134,5 +134,9 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib") { version { strictly("1.9.10") } }
     implementation 'com.caverock:androidsvg-aar:1.4'
     implementation "rustls:rustls-platform-verifier:0.1.1"
+    // SunDesk: smartposapi AAR bundles its own copy of com.google.zxing.* which
+    // clashes with the zxing core pulled in by qr_code_scanner. The AAR is
+    // stripped of those classes; provide zxing core explicitly instead.
+    implementation 'com.google.zxing:core:3.5.0'
     implementation(files("libs/smartposapi_V1.0.8_20250512102526.aar"))
 }
