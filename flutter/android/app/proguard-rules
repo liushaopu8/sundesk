@@ -5,3 +5,15 @@
 
 # Keep rustls-platform-verifier classes for JNI
 -keep, includedescriptorclasses class org.rustls.platformverifier.** { *; }
+
+# SunDesk: keep the whole Sunyard smartposapi SDK. Its native .so accesses
+# Java fields/methods by name via JNI (e.g. NativeTransfer.mNativePtr) and it
+# uses AIDL stubs against the device framework class android.app.SunSDKManager;
+# obfuscating these breaks init with NoSuchFieldError / ClassCastException.
+-keep class com.sunyard.** { *; }
+-keep interface com.sunyard.** { *; }
+-keepclassmembers class com.sunyard.** {
+    native <methods>;
+    <fields>;
+}
+-dontwarn com.sunyard.**
