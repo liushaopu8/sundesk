@@ -171,7 +171,7 @@ fun getDeviceSn(context: Context): String {
     try {
             sn = TerminalManager.getInstance().getProductCmd(TerminalManager.PRODUCT_SN)
         } catch (e: SDKException) {
-            Log.w("main", "TerminalManager.PRODUCT_SN failed: " + e.getMessage())
+            Log.w("main", "TerminalManager.PRODUCT_SN failed: " + e.message)
         }
     } else {
         try {
